@@ -38,13 +38,17 @@ export default function VeloLedgerApp() {
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-100 pb-28 font-sans selection:bg-sky-500 selection:text-white">
-      {/* Top Header */}
-      <header className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-slate-800/60 max-w-lg mx-auto">
+      {/* Top Header matching your exact screenshot layout */}
+      <header className="flex justify-between items-center px-5 pt-5 pb-4 border-b border-slate-800/60 max-w-lg mx-auto">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-white">VeloLedger</h1>
-          <p className="text-xs text-slate-400 font-medium">Enterprise Escrow & Cash Velocity</p>
+          <h1 className="text-xl font-black tracking-tight text-white">VeloLedger</h1>
+          <p className="text-[11px] text-slate-400 font-medium">Enterprise Escrow & Cash Velocity</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Auto-Chaser Active
+          </span>
           <span className="text-xs font-semibold text-slate-300">ElenaStudio Velocity</span>
         </div>
       </header>
@@ -54,13 +58,6 @@ export default function VeloLedgerApp() {
         
         {activeTab === 'dashboard' && (
           <>
-            <div className="flex justify-between items-center px-1">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                Auto-Chaser Active
-              </span>
-            </div>
-
             <div className="bg-[#111827] border border-indigo-500/30 rounded-2xl p-4 shadow-xl">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-amber-500/10 rounded-xl text-amber-400 border border-amber-500/20 text-lg">
@@ -106,7 +103,7 @@ export default function VeloLedgerApp() {
                   Active Client Invoices ({invoices.length + 12})
                 </h3>
                 <button onClick={() => setActiveTab('invoices')} className="text-xs font-semibold text-sky-400 hover:text-sky-300 cursor-pointer">
-                  + Create Invoice
+                  View all
                 </button>
               </div>
 
