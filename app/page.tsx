@@ -41,7 +41,14 @@ export default function VeloLedgerApp() {
 
   const sendWhatsAppReminder = (inv: any) => {
     const message = encodeURIComponent(
-      `Hi ${inv.client}, quick automated notice from VeloLedger regarding milestone "${inv.title}" (${inv.id}) for $${inv.amount.toLocaleString()}. Escrow release or settlement is currently pending. Kindly process to maintain your velocity tier.`
+      `🚨 *VELOLEDGER ESCROW NOTICE*\n\n` +
+      `Hi *${inv.client}*,\n\n` +
+      `This is an automated priority escalation regarding pending settlement for milestone: *"${inv.title}"* (${inv.id}).\n\n` +
+      `• *Amount Due:* $${inv.amount.toLocaleString()}.00\n` +
+      `• *Status:* ${inv.status}\n` +
+      `• *Impact:* Delaying this sign-off affects ElenaStudio's cross-platform cash velocity tier.\n\n` +
+      `Kindly complete the escrow release or direct bank transfer immediately to clear this block.\n\n` +
+      `_Powered by VeloLedger Enterprise Automation_`
     );
     window.open(`https://wa.me/${inv.phone}?text=${message}`, '_blank');
   };
@@ -173,7 +180,7 @@ export default function VeloLedgerApp() {
             <p className="text-xs text-slate-400">Automated multi-step reminder sequences deployed to sluggish clients.</p>
             <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 text-xs space-y-2">
               <div className="font-bold text-white">Active Sequence: 3-Day Escalation</div>
-              <p className="text-slate-400 text-[11px]">Sends polite automated pings on WhatsApp once milestone sign-offs hit the 48-hour window.</p>
+              <p className="text-slate-400 text-[11px]">Sends high-impact automated pings on WhatsApp once milestone sign-offs hit the window.</p>
             </div>
           </div>
         )}
