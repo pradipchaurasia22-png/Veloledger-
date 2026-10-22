@@ -38,7 +38,7 @@ export default function VeloLedgerApp() {
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-100 pb-28 font-sans selection:bg-sky-500 selection:text-white">
-      {/* Top Header matching your exact screenshot layout */}
+      {/* Top Header */}
       <header className="flex justify-between items-center px-5 pt-5 pb-4 border-b border-slate-800/60 max-w-lg mx-auto">
         <div>
           <h1 className="text-xl font-black tracking-tight text-white">VeloLedger</h1>
