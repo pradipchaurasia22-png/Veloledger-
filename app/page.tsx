@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase/client';
 export default function VeloLedgerApp() {
   const supabase = createClient();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'ledger' | 'chasers' | 'invoices'>('dashboard');
-  const [loadingId, setLoadingId] = useState<string | null>(null);
   
   const [invoices, setInvoices] = useState<any[]>([
     { 
@@ -61,7 +60,6 @@ export default function VeloLedgerApp() {
   };
 
   const sendWhatsAppReminder = (inv: any) => {
-    // Falls back to direct automated chat dispatch which works instantly on mobile devices
     const message = encodeURIComponent(
       `🏛️ *VELOLEDGER INSTITUTIONAL SETTLEMENT NOTICE*\n\n` +
       `Dear *${inv.client}*,\n\n` +
@@ -89,7 +87,7 @@ export default function VeloLedgerApp() {
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Mobile Active
+            Live
           </span>
         </div>
       </header>
@@ -114,6 +112,12 @@ export default function VeloLedgerApp() {
                   ⚡
                 </div>
               </div>
+              <button 
+                onClick={() => alert('Velocity card copied! Share your performance metrics on LinkedIn or X.')} 
+                className="mt-3.5 w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold rounded-xl transition-all border border-indigo-500/30 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>🚀</span> Share Performance Badge
+              </button>
             </div>
 
             {/* Financial Overview Grid */}
@@ -205,13 +209,13 @@ export default function VeloLedgerApp() {
         {activeTab === 'chasers' && (
           <div className="bg-[#101726]/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
             <h2 className="text-sm font-bold text-white uppercase font-mono tracking-wider">WhatsApp Auto-Chaser Engine</h2>
-            <p className="text-xs text-slate-400">One-tap institutional escalation sequences loaded with direct secure payment links.</p>
+            <p className="text-xs text-slate-400">Configured workflows pushing smart settlement notices with integrated gateway links.</p>
             <div className="p-3.5 bg-[#070a12] rounded-xl border border-slate-800/80 text-xs space-y-2">
               <div className="font-bold text-indigo-400 flex items-center gap-1.5">
-                <span>🛡️</span> Smart Gateway Dispatch
+                <span>🛡️</span> Active Protocol: Smart Escalation
               </div>
               <p className="text-slate-400 text-[11px] leading-relaxed">
-                Tapping chase instantly formats an institutional reminder pre-loaded with secure payment buttons for your clients.
+                Reminders automatically attach encrypted instant-pay links, allowing clients to clear balances directly from their mobile chat apps.
               </p>
             </div>
           </div>
