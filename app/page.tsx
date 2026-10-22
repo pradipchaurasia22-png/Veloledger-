@@ -5,8 +5,12 @@ import { createClient } from '@/lib/supabase/client';
 
 export default function VeloLedgerApp() {
   const supabase = createClient();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'ledger' | 'chasers' | 'invoices'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'vault' | 'chasers' | 'invoices'>('dashboard');
   
+  // Client portal view state (simulates what the client sees when opening payLink)
+  const [clientViewInvoice, setClientViewInvoice] = useState<any | null>(null);
+  const [simulatedPaid, setSimulatedPaid] = useState(false);
+
   const [invoices, setInvoices] = useState<any[]>([
     { 
       id: 'INV-2024-88', 
@@ -14,9 +18,12 @@ export default function VeloLedgerApp() {
       phone: '1234567890', 
       title: 'Brand Identity Milestone II', 
       amount: 4250, 
-      status: 'Overdue 4d', 
+      status: 'Locked (Awaiting Settlement)', 
       date: 'Due Oct 24',
-      payLink: 'https://pay.veloledger.app/inv_88'
+      payLink: 'https://pay.veloledger.app/inv_88',
+      deliverableName: 'Acme_Brand_Guidelines_v2.fig + Vector Assets',
+      deliverableUrl: 'https://figma.com/@sample-locked-asset',
+      isLocked: true
     },
     { 
       id: 'INV-2024-91', 
@@ -26,7 +33,10 @@ export default function VeloLedgerApp() {
       amount: 7500, 
       status: 'Escrow Funded', 
       date: 'Release in 48h (Signed off)',
-      payLink: 'https://pay.veloledger.app/inv_91'
+      payLink: 'https://pay.veloledger.app/inv_91',
+      deliverableName: 'NextGen_Design_Sprint_Final_Code.zip',
+      deliverableUrl: 'https://github.com/sample/protected-repo',
+      isLocked: false
     }
   ]);
 
@@ -34,6 +44,8 @@ export default function VeloLedgerApp() {
   const [clientPhone, setClientPhone] = useState('');
   const [invoiceTitle, setInvoiceTitle] = useState('');
   const [invoiceAmount, setInvoiceAmount] = useState('');
+  const [deliverableName, setDeliverableName] = useState('');
+  const [deliverableUrl, setDeliverableUrl] = useState('');
 
   const handleCreateInvoice = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,9 +58,12 @@ export default function VeloLedgerApp() {
       phone: clientPhone || '1234567890',
       title: invoiceTitle || 'Strategic Execution Milestone',
       amount: parseFloat(invoiceAmount),
-      status: 'Pending Escrow',
+      status: 'Locked (Escrow Pending)',
       date: 'Due in 30 days',
-      payLink: `https://pay.veloledger.app/inv_${randomId}`
+      payLink: `https://pay.veloledger.app/inv_${randomId}`,
+      deliverableName: deliverableName || 'Final Production Assets.zip',
+      deliverableUrl: deliverableUrl || 'https://drive.google.com/sample-locked-file',
+      isLocked: true
     };
 
     setInvoices([newInv, ...invoices]);
@@ -56,22 +71,117 @@ export default function VeloLedgerApp() {
     setClientPhone('');
     setInvoiceTitle('');
     setInvoiceAmount('');
+    setDeliverableName('');
+    setDeliverableUrl('');
     setActiveTab('dashboard');
   };
 
   const sendWhatsAppReminder = (inv: any) => {
     const message = encodeURIComponent(
-      `🏛️ *VELOLEDGER INSTITUTIONAL SETTLEMENT NOTICE*\n\n` +
-      `Dear *${inv.client}*,\n\n` +
-      `This is a priority settlement dispatch for milestone *"${inv.title}"* reference *(${inv.id})*.\n\n` +
+      `🏛️ *VELOLEDGER EXECUTIVE DISPATCH*\n\n` +
+      `Hi *${inv.client}*,\n\n` +
+      `I'm following up on the pending settlement for *"${inv.title}"* (${inv.id}).\n\n` +
       `• *Statement Balance:* $${inv.amount.toLocaleString()}.00\n` +
-      `• *Current Standing:* ${inv.status}\n\n` +
-      `To secure continuous enterprise velocity and finalize this release, please authorize payment immediately via our secure gateway:\n` +
+      `• *Deliverable Status:* 🔒 Locked in Secure Escrow Vault (${inv.deliverableName})\n\n` +
+      `Authorize payment below to instantly unlock and download your production assets:\n` +
       `🔗 ${inv.payLink}\n\n` +
-      `_Secure Escrow Handled via VeloLedger Infrastructure_`
+      `_Let me know if you need any assistance clearing this._`
     );
     window.open(`https://wa.me/${inv.phone}?text=${message}`, '_blank');
   };
+
+  // If client clicks "Pay Link", render the secure Escrow Paywall Portal
+  if (clientViewInvoice) {
+    return (
+      <div className="min-h-screen bg-[#070a12] text-slate-100 p-6 flex flex-col justify-between font-sans">
+        <div className="max-w-md mx-auto w-full space-y-6 pt-6">
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              <span>🛡️</span> VELOLEDGER SECURE ESCROW VAULT
+            </div>
+            <h1 className="text-xl font-black text-white tracking-tight">Milestone Settlement Portal</h1>
+            <p className="text-xs text-slate-400">Prepared for <strong className="text-slate-200">{clientViewInvoice.client}</strong></p>
+          </div>
+
+          {/* Invoice Summary Card */}
+          <div className="bg-[#101726] border border-slate-800 rounded-2xl p-5 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-start border-b border-slate-800/80 pb-4">
+              <div>
+                <p className="text-[10px] text-slate-400 font-mono uppercase">Reference ID</p>
+                <h3 className="text-sm font-bold text-white mt-0.5">{clientViewInvoice.id}</h3>
+                <p className="text-xs text-slate-300 mt-1">{clientViewInvoice.title}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] text-slate-400 font-mono uppercase">Amount Due</p>
+                <h3 className="text-lg font-black text-white mt-0.5">${clientViewInvoice.amount.toLocaleString()}.00</h3>
+              </div>
+            </div>
+
+            {/* Deliverable Vault Preview (Locked vs Unlocked) */}
+            <div className="bg-[#070a12] border border-slate-800/90 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <span>{simulatedPaid ? '📂' : '🔒'}</span> Deliverable Asset
+                </span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
+                  simulatedPaid ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                }`}>
+                  {simulatedPaid ? 'UNLOCKED' : 'LOCKED BY ESCROW'}
+                </span>
+              </div>
+              
+              <div className="text-xs font-mono text-slate-300 bg-[#101726] p-2.5 rounded-lg border border-slate-800 flex items-center justify-between">
+                <span className="truncate max-w-[200px]">{clientViewInvoice.deliverableName}</span>
+                <span className="text-[10px] text-slate-500">254 MB</span>
+              </div>
+
+              {!simulatedPaid ? (
+                <p className="text-[11px] text-amber-400/90 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-lg">
+                  ⚠️ Files are cryptographically sealed. Completing payment instantly triggers automated release keys to your dashboard.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-lg font-medium">
+                    ✅ Payment Verified! Escrow funds cleared successfully.
+                  </p>
+                  <a 
+                    href={clientViewInvoice.deliverableUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs text-center rounded-xl transition-all shadow-lg shadow-emerald-600/20"
+                  >
+                    📥 Download Verified Deliverable Assets
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {!simulatedPaid && (
+              <button 
+                onClick={() => setSimulatedPaid(true)}
+                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition-all shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>💳</span> Authorize & Pay ${clientViewInvoice.amount.toLocaleString()}.00 (Simulate Gateway)
+              </button>
+            )}
+          </div>
+
+          {/* Back button for testing */}
+          <button 
+            onClick={() => { setClientViewInvoice(null); setSimulatedPaid(false); }}
+            className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition-all cursor-pointer"
+          >
+            ← Return to VeloLedger Dashboard
+          </button>
+        </div>
+
+        <div className="text-center text-[10px] text-slate-500 py-4 font-mono">
+          Secured & Verified by VeloLedger Enterprise Infrastructure
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#070a12] text-slate-100 pb-32 font-sans selection:bg-indigo-500 selection:text-white">
@@ -87,7 +197,7 @@ export default function VeloLedgerApp() {
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Live
+            Live Vault Active
           </span>
         </div>
       </header>
@@ -97,41 +207,35 @@ export default function VeloLedgerApp() {
         
         {activeTab === 'dashboard' && (
           <>
-            {/* Viral Growth Metric Card */}
+            {/* ROI Metric Card */}
             <div className="relative overflow-hidden bg-gradient-to-br from-[#111827] via-[#0d1322] to-[#161e31] border border-indigo-500/30 rounded-2xl p-4 shadow-2xl">
               <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl pointer-events-none"></div>
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="text-[10px] font-mono tracking-wider text-indigo-400 uppercase font-semibold">Velocity Index</span>
+                  <span className="text-[10px] font-mono tracking-wider text-indigo-400 uppercase font-semibold">Velocity Index & ROI</span>
                   <h2 className="text-sm font-bold text-white mt-0.5">14.8 Days Average Settlement</h2>
                   <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
-                    Automated chasers have accelerated your incoming capital flow by <span className="text-emerald-400 font-bold">11.2 days</span> vs industry standard.
+                    Escrow paywalls have locked <span className="text-emerald-400 font-bold">$11,750</span> in deliverables, guaranteeing zero unpaid work handovers.
                   </p>
                 </div>
                 <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20 shrink-0">
-                  ⚡
+                  🛡️
                 </div>
               </div>
-              <button 
-                onClick={() => alert('Velocity card copied! Share your performance metrics on LinkedIn or X.')} 
-                className="mt-3.5 w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold rounded-xl transition-all border border-indigo-500/30 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <span>🚀</span> Share Performance Badge
-              </button>
             </div>
 
             {/* Financial Overview Grid */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-[#101726]/80 backdrop-blur border border-slate-800/80 rounded-2xl p-4 shadow-lg">
-                <p className="text-[11px] text-slate-400 font-medium">Total Lifetime Volume</p>
+                <p className="text-[11px] text-slate-400 font-medium">Secured Volume</p>
                 <h3 className="text-xl font-black text-white mt-1 tracking-tight">$148,650</h3>
                 <p className="text-[10px] text-emerald-400 font-semibold mt-1">▲ +14.2% this quarter</p>
               </div>
               
               <div className="bg-[#101726]/80 backdrop-blur border border-slate-800/80 rounded-2xl p-4 shadow-lg">
-                <p className="text-[11px] text-slate-400 font-medium">Active Receivables</p>
-                <h3 className="text-xl font-black text-white mt-1 tracking-tight">$18,420</h3>
-                <p className="text-[10px] text-amber-400 font-semibold mt-1">1 Overdue ($3,200)</p>
+                <p className="text-[11px] text-slate-400 font-medium">Locked Vaults</p>
+                <h3 className="text-xl font-black text-white mt-1 tracking-tight">2 Active</h3>
+                <p className="text-[10px] text-amber-400 font-semibold mt-1">Pending Settlement</p>
               </div>
             </div>
 
@@ -139,42 +243,50 @@ export default function VeloLedgerApp() {
             <div className="pt-1">
               <div className="flex justify-between items-center mb-3 px-1">
                 <h3 className="text-xs font-bold text-slate-200 tracking-wider uppercase font-mono">
-                  Tracked Invoices ({invoices.length})
+                  Escrow Vault & Invoices ({invoices.length})
                 </h3>
                 <button onClick={() => setActiveTab('invoices')} className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 cursor-pointer">
-                  + Issue Invoice
+                  + New Locked Asset
                 </button>
               </div>
 
               <div className="space-y-3">
                 {invoices.map((inv, idx) => (
-                  <div key={idx} className="bg-[#101726]/90 backdrop-blur border border-slate-800/90 rounded-2xl p-4 shadow-xl hover:border-slate-700 transition-all">
+                  <div key={idx} className="bg-[#101726]/90 backdrop-blur border border-slate-800/90 rounded-2xl p-4 shadow-xl hover:border-slate-700 transition-all space-y-3">
                     <div className="flex justify-between items-start">
                       <div>
                         <h4 className="font-bold text-white text-sm">{inv.client}</h4>
                         <p className="text-[11px] text-slate-400 mt-0.5">{inv.title} • <span className="font-mono text-slate-300">{inv.id}</span></p>
                       </div>
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        inv.status.includes('Overdue') ? 'bg-rose-500/10 text-rose-400 border border-rose-500/25' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25'
+                        inv.status.includes('Escrow') ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25' : 'bg-amber-500/10 text-amber-400 border border-amber-500/25'
                       }`}>
                         {inv.status}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-800/60">
+                    <div className="bg-[#070a12]/70 rounded-xl p-2.5 border border-slate-800 flex items-center justify-between text-xs font-mono">
+                      <span className="text-slate-300 truncate max-w-[180px]">🔒 {inv.deliverableName}</span>
+                      <button 
+                        onClick={() => setClientViewInvoice(inv)} 
+                        className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold underline cursor-pointer"
+                      >
+                        Preview Client Portal
+                      </button>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-800/60">
                       <div>
                         <div className="text-base font-black text-white tracking-tight">${inv.amount.toLocaleString()}.00</div>
                         <div className="text-[10px] text-slate-400">{inv.date}</div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <a 
-                          href={inv.payLink} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
+                        <button 
+                          onClick={() => setClientViewInvoice(inv)}
                           className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-1 cursor-pointer"
                         >
-                          <span>💳</span> Pay
-                        </a>
+                          <span>💳</span> Pay Portal
+                        </button>
                         <button 
                           onClick={() => sendWhatsAppReminder(inv)}
                           className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-semibold rounded-xl border border-emerald-500/30 transition-all flex items-center gap-1 cursor-pointer"
@@ -190,32 +302,35 @@ export default function VeloLedgerApp() {
           </>
         )}
 
-        {activeTab === 'ledger' && (
+        {activeTab === 'vault' && (
           <div className="bg-[#101726]/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
-            <h2 className="text-sm font-bold text-white uppercase font-mono tracking-wider">Financial Ledger</h2>
-            <p className="text-xs text-slate-400">Verified transaction logs and escrow vault allocations.</p>
-            <div className="space-y-2 pt-2">
-              <div className="flex justify-between items-center p-3.5 bg-[#070a12] rounded-xl border border-slate-800/80 text-xs">
-                <div>
-                  <div className="font-bold text-white">Acme Studio Milestone II</div>
-                  <div className="text-slate-400 text-[10px] font-mono mt-0.5">Escrow Vault Secured • ID: TX-9921</div>
+            <h2 className="text-sm font-bold text-white uppercase font-mono tracking-wider">Deliverable Vault Manager</h2>
+            <p className="text-xs text-slate-400">All deliverables stored under cryptographic lock until settlement.</p>
+            <div className="space-y-2.5 pt-1">
+              {invoices.map((inv, idx) => (
+                <div key={idx} className="p-3.5 bg-[#070a12] rounded-xl border border-slate-800 text-xs space-y-1.5">
+                  <div className="flex justify-between items-center font-bold">
+                    <span className="text-white">{inv.client}</span>
+                    <span className="text-indigo-400 font-mono">${inv.amount.toLocaleString()}</span>
+                  </div>
+                  <div className="text-slate-400 text-[11px] font-mono">File: {inv.deliverableName}</div>
+                  <div className="text-emerald-400 text-[10px]">Vault Status: Cryptographically Sealed 🔒</div>
                 </div>
-                <div className="text-emerald-400 font-black font-mono">+$4,250.00</div>
-              </div>
+              ))}
             </div>
           </div>
         )}
 
         {activeTab === 'chasers' && (
           <div className="bg-[#101726]/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
-            <h2 className="text-sm font-bold text-white uppercase font-mono tracking-wider">WhatsApp Auto-Chaser Engine</h2>
-            <p className="text-xs text-slate-400">Configured workflows pushing smart settlement notices with integrated gateway links.</p>
+            <h2 className="text-sm font-bold text-white uppercase font-mono tracking-wider">Escrow Chaser Protocol</h2>
+            <p className="text-xs text-slate-400">High-conversion collection sequences highlighting locked deliverables.</p>
             <div className="p-3.5 bg-[#070a12] rounded-xl border border-slate-800/80 text-xs space-y-2">
               <div className="font-bold text-indigo-400 flex items-center gap-1.5">
-                <span>🛡️</span> Active Protocol: Smart Escalation
+                <span>🛡️</span> Zero-Risk Handovers
               </div>
               <p className="text-slate-400 text-[11px] leading-relaxed">
-                Reminders automatically attach encrypted instant-pay links, allowing clients to clear balances directly from their mobile chat apps.
+                Clients are notified that their work asset is waiting inside the secure escrow vault, driving immediate payments with zero hesitation.
               </p>
             </div>
           </div>
@@ -223,8 +338,8 @@ export default function VeloLedgerApp() {
 
         {activeTab === 'invoices' && (
           <div className="bg-[#101726]/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
-            <h2 className="text-sm font-bold text-white uppercase font-mono tracking-wider">Deploy New Invoice</h2>
-            <p className="text-xs text-slate-400">Generate an instant payment link and dashboard ledger entry.</p>
+            <h2 className="text-sm font-bold text-white uppercase font-mono tracking-wider">Lock New Deliverable & Invoice</h2>
+            <p className="text-xs text-slate-400">Upload your work asset and generate an automated escrow paywall link.</p>
             
             <form onSubmit={handleCreateInvoice} className="space-y-3 pt-1">
               <div>
@@ -259,6 +374,26 @@ export default function VeloLedgerApp() {
                 />
               </div>
               <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Deliverable File Name / Asset Title</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Nexus_V1_Source_Files.zip"
+                  value={deliverableName}
+                  onChange={(e) => setDeliverableName(e.target.value)}
+                  className="w-full bg-[#070a12] border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Protected File URL (Unlocked After Pay)</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. https://github.com/... or Google Drive link"
+                  value={deliverableUrl}
+                  onChange={(e) => setDeliverableUrl(e.target.value)}
+                  className="w-full bg-[#070a12] border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition-all"
+                />
+              </div>
+              <div>
                 <label className="block text-[11px] font-semibold text-slate-300 mb-1">Amount ($ USD)</label>
                 <input 
                   type="number" 
@@ -273,7 +408,7 @@ export default function VeloLedgerApp() {
                 type="submit"
                 className="w-full mt-2 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-indigo-600/30 cursor-pointer flex items-center justify-center gap-1.5"
               >
-                <span>⚡</span> Generate Escrow Link & Sync
+                <span>🔒</span> Lock Deliverable & Generate Paywall
               </button>
             </form>
           </div>
@@ -291,11 +426,11 @@ export default function VeloLedgerApp() {
           <span>Dashboard</span>
         </button>
         <button 
-          onClick={() => setActiveTab('ledger')} 
-          className={`flex flex-col items-center gap-1 transition-all cursor-pointer ${activeTab === 'ledger' ? 'text-indigo-400 font-bold scale-105' : 'hover:text-slate-200'}`}
+          onClick={() => setActiveTab('vault')} 
+          className={`flex flex-col items-center gap-1 transition-all cursor-pointer ${activeTab === 'vault' ? 'text-indigo-400 font-bold scale-105' : 'hover:text-slate-200'}`}
         >
-          <span className="text-sm">📁</span>
-          <span>Ledger</span>
+          <span className="text-sm">🔒</span>
+          <span>Vault</span>
         </button>
         <button 
           onClick={() => setActiveTab('chasers')} 
