@@ -8,11 +8,12 @@ export default function VeloLedgerApp() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'ledger' | 'chasers' | 'invoices'>('dashboard');
   
   const [invoices, setInvoices] = useState<any[]>([
-    { id: 'INV-2024-88', client: 'Acme Studio', title: 'Brand Identity Milestone II', amount: 4250, status: 'Overdue 4d', date: 'Due Oct 24' },
-    { id: 'INV-2024-91', client: 'BoldCraft Digital', title: 'Design Sprint & Prototype', amount: 7500, status: 'Escrow Funded', date: 'Release in 48h (Signed off)' }
+    { id: 'INV-2024-88', client: 'Acme Studio', phone: '1234567890', title: 'Brand Identity Milestone II', amount: 4250, status: 'Overdue 4d', date: 'Due Oct 24' },
+    { id: 'INV-2024-91', client: 'BoldCraft Digital', phone: '1234567890', title: 'Design Sprint & Prototype', amount: 7500, status: 'Escrow Funded', date: 'Release in 48h (Signed off)' }
   ]);
 
   const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
   const [invoiceTitle, setInvoiceTitle] = useState('');
   const [invoiceAmount, setInvoiceAmount] = useState('');
 
@@ -23,6 +24,7 @@ export default function VeloLedgerApp() {
     const newInv = {
       id: `INV-2024-${Math.floor(10 + Math.random() * 90)}`,
       client: clientName,
+      phone: clientPhone || '1234567890',
       title: invoiceTitle || 'General Milestone',
       amount: parseFloat(invoiceAmount),
       status: 'Pending',
@@ -31,9 +33,17 @@ export default function VeloLedgerApp() {
 
     setInvoices([newInv, ...invoices]);
     setClientName('');
+    setClientPhone('');
     setInvoiceTitle('');
     setInvoiceAmount('');
     setActiveTab('dashboard');
+  };
+
+  const sendWhatsAppReminder = (inv: any) => {
+    const message = encodeURIComponent(
+      `Hi ${inv.client}, quick automated notice from VeloLedger regarding milestone "${inv.title}" (${inv.id}) for $${inv.amount.toLocaleString()}. Escrow release or settlement is currently pending. Kindly process to maintain your velocity tier.`
+    );
+    window.open(`https://wa.me/${inv.phone}?text=${message}`, '_blank');
   };
 
   return (
@@ -58,18 +68,19 @@ export default function VeloLedgerApp() {
         
         {activeTab === 'dashboard' && (
           <>
-            <div className="bg-[#111827] border border-indigo-500/30 rounded-2xl p-4 shadow-xl">
+            {/* Viral Growth Banner */}
+            <div className="bg-gradient-to-r from-indigo-900/40 via-[#111827] to-purple-900/40 border border-indigo-500/30 rounded-2xl p-4 shadow-xl">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-amber-500/10 rounded-xl text-amber-400 border border-amber-500/20 text-lg">
-                  ⚡
+                <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20 text-lg">
+                  🚀
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-white">Automated Escrow Alert</h2>
+                  <h2 className="text-sm font-bold text-white">Cash Velocity Boosted</h2>
                   <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
-                    2 invoices escalated to WhatsApp chaser: Acme Studio & BoldCraft.
+                    Your automated WhatsApp chasers have saved you roughly 11 days of waiting per client invoice this month.
                   </p>
-                  <button onClick={() => setActiveTab('chasers')} className="mt-3 inline-flex items-center text-xs font-semibold text-indigo-300 bg-indigo-600/30 hover:bg-indigo-600/50 px-3 py-1.5 rounded-lg transition-colors border border-indigo-500/40 cursor-pointer">
-                    View Escalations &rarr;
+                  <button onClick={() => alert('Viral Share Link Copied! Share your velocity score on X or LinkedIn.')} className="mt-3 inline-flex items-center text-xs font-semibold text-indigo-300 bg-indigo-600/30 hover:bg-indigo-600/50 px-3 py-1.5 rounded-lg transition-colors border border-indigo-500/40 cursor-pointer">
+                    Share Velocity Badge &rarr;
                   </button>
                 </div>
               </div>
@@ -103,7 +114,7 @@ export default function VeloLedgerApp() {
                   Active Client Invoices ({invoices.length + 12})
                 </h3>
                 <button onClick={() => setActiveTab('invoices')} className="text-xs font-semibold text-sky-400 hover:text-sky-300 cursor-pointer">
-                  View all
+                  + Create Invoice
                 </button>
               </div>
 
@@ -126,15 +137,12 @@ export default function VeloLedgerApp() {
                         <div className="text-base font-extrabold text-white">${inv.amount.toLocaleString()}.00</div>
                         <div className="text-[11px] text-slate-400">{inv.date}</div>
                       </div>
-                      {inv.status.includes('Overdue') ? (
-                        <button className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition-colors cursor-pointer">
-                          🔔 Remind Again
-                        </button>
-                      ) : (
-                        <div className="text-xs text-slate-400 font-mono bg-slate-800/60 px-2 py-1 rounded border border-slate-700/50">
-                          Chase ***4012
-                        </div>
-                      )}
+                      <button 
+                        onClick={() => sendWhatsAppReminder(inv)}
+                        className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 text-xs font-semibold rounded-lg border border-emerald-500/30 transition-colors cursor-pointer flex items-center gap-1.5"
+                      >
+                        <span>💬</span> WhatsApp Chase
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -161,15 +169,19 @@ export default function VeloLedgerApp() {
 
         {activeTab === 'chasers' && (
           <div className="bg-[#111827] border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
-            <h2 className="text-base font-bold text-white">WhatsApp Auto-Chaser</h2>
-            <p className="text-xs text-slate-400">Automated reminder sequences running smoothly.</p>
+            <h2 className="text-base font-bold text-white">WhatsApp Auto-Chaser Engine</h2>
+            <p className="text-xs text-slate-400">Automated multi-step reminder sequences deployed to sluggish clients.</p>
+            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 text-xs space-y-2">
+              <div className="font-bold text-white">Active Sequence: 3-Day Escalation</div>
+              <p className="text-slate-400 text-[11px]">Sends polite automated pings on WhatsApp once milestone sign-offs hit the 48-hour window.</p>
+            </div>
           </div>
         )}
 
         {activeTab === 'invoices' && (
           <div className="bg-[#111827] border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
             <h2 className="text-base font-bold text-white">Generate New Invoice</h2>
-            <p className="text-xs text-slate-400">Fill in the form to push a live card straight to your dashboard.</p>
+            <p className="text-xs text-slate-400">Fill in details to instantly deploy a trackable escrow card.</p>
             
             <form onSubmit={handleCreateInvoice} className="space-y-3 pt-2">
               <div>
@@ -181,6 +193,16 @@ export default function VeloLedgerApp() {
                   onChange={(e) => setClientName(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Client WhatsApp Number (with country code)</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. 1234567890"
+                  value={clientPhone}
+                  onChange={(e) => setClientPhone(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
                 />
               </div>
               <div>
