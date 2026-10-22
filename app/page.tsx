@@ -7,13 +7,11 @@ export default function VeloLedgerApp() {
   const supabase = createClient();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'ledger' | 'chasers' | 'invoices'>('dashboard');
   
-  // Invoices State
   const [invoices, setInvoices] = useState<any[]>([
     { id: 'INV-2024-88', client: 'Acme Studio', title: 'Brand Identity Milestone II', amount: 4250, status: 'Overdue 4d', date: 'Due Oct 24' },
     { id: 'INV-2024-91', client: 'BoldCraft Digital', title: 'Design Sprint & Prototype', amount: 7500, status: 'Escrow Funded', date: 'Release in 48h (Signed off)' }
   ]);
 
-  // Form State for creating new invoice
   const [clientName, setClientName] = useState('');
   const [invoiceTitle, setInvoiceTitle] = useState('');
   const [invoiceAmount, setInvoiceAmount] = useState('');
@@ -39,9 +37,9 @@ export default function VeloLedgerApp() {
   };
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 pb-28 font-sans">
-      {/* Top Header matching screenshot */}
-      <header className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-slate-800/60">
+    <div className="min-h-screen bg-[#090d16] text-slate-100 pb-28 font-sans selection:bg-sky-500 selection:text-white">
+      {/* Top Header */}
+      <header className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-slate-800/60 max-w-lg mx-auto">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-white">VeloLedger</h1>
           <p className="text-xs text-slate-400 font-medium">Enterprise Escrow & Cash Velocity</p>
@@ -54,10 +52,8 @@ export default function VeloLedgerApp() {
       {/* Main Container */}
       <main className="px-4 pt-4 max-w-lg mx-auto space-y-4">
         
-        {/* TAB 1: DASHBOARD */}
         {activeTab === 'dashboard' && (
           <>
-            {/* Auto-Chaser Status Badge Bar */}
             <div className="flex justify-between items-center px-1">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -65,7 +61,6 @@ export default function VeloLedgerApp() {
               </span>
             </div>
 
-            {/* Automated Escrow Alert Card */}
             <div className="bg-[#111827] border border-indigo-500/30 rounded-2xl p-4 shadow-xl">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-amber-500/10 rounded-xl text-amber-400 border border-amber-500/20 text-lg">
@@ -76,14 +71,13 @@ export default function VeloLedgerApp() {
                   <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
                     2 invoices escalated to WhatsApp chaser: Acme Studio & BoldCraft.
                   </p>
-                  <button onClick={() => setActiveTab('chasers')} className="mt-3 inline-flex items-center text-xs font-semibold text-indigo-300 bg-indigo-600/30 hover:bg-indigo-600/50 px-3 py-1.5 rounded-lg transition-colors border border-indigo-500/40">
+                  <button onClick={() => setActiveTab('chasers')} className="mt-3 inline-flex items-center text-xs font-semibold text-indigo-300 bg-indigo-600/30 hover:bg-indigo-600/50 px-3 py-1.5 rounded-lg transition-colors border border-indigo-500/40 cursor-pointer">
                     View Escalations &rarr;
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Total Lifetime Earnings Card */}
             <div className="bg-[#111827] border border-slate-800/80 rounded-2xl p-4 shadow-md">
               <p className="text-xs text-slate-400 font-medium">Total Lifetime Earnings</p>
               <h3 className="text-2xl font-extrabold text-white mt-1">$148,650.00</h3>
@@ -92,7 +86,6 @@ export default function VeloLedgerApp() {
               </p>
             </div>
 
-            {/* Dual Grid Cards */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-[#111827] border border-slate-800/80 rounded-2xl p-4 shadow-md">
                 <p className="text-xs text-slate-400 font-medium">Outstanding (A/R)</p>
@@ -107,14 +100,13 @@ export default function VeloLedgerApp() {
               </div>
             </div>
 
-            {/* Active Client Invoices Section */}
             <div className="pt-2">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-sm font-bold text-white tracking-wide">
                   Active Client Invoices ({invoices.length + 12})
                 </h3>
-                <button onClick={() => setActiveTab('invoices')} className="text-xs font-semibold text-sky-400 hover:text-sky-300">
-                  View all / Add
+                <button onClick={() => setActiveTab('invoices')} className="text-xs font-semibold text-sky-400 hover:text-sky-300 cursor-pointer">
+                  + Create Invoice
                 </button>
               </div>
 
@@ -138,7 +130,7 @@ export default function VeloLedgerApp() {
                         <div className="text-[11px] text-slate-400">{inv.date}</div>
                       </div>
                       {inv.status.includes('Overdue') ? (
-                        <button className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition-colors">
+                        <button className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition-colors cursor-pointer">
                           🔔 Remind Again
                         </button>
                       ) : (
@@ -154,7 +146,6 @@ export default function VeloLedgerApp() {
           </>
         )}
 
-        {/* TAB 2: LEDGER */}
         {activeTab === 'ledger' && (
           <div className="bg-[#111827] border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
             <h2 className="text-base font-bold text-white">Financial Ledger</h2>
@@ -171,7 +162,6 @@ export default function VeloLedgerApp() {
           </div>
         )}
 
-        {/* TAB 3: CHASERS */}
         {activeTab === 'chasers' && (
           <div className="bg-[#111827] border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
             <h2 className="text-base font-bold text-white">WhatsApp Auto-Chaser</h2>
@@ -179,7 +169,6 @@ export default function VeloLedgerApp() {
           </div>
         )}
 
-        {/* TAB 4: INVOICES (CREATOR) */}
         {activeTab === 'invoices' && (
           <div className="bg-[#111827] border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
             <h2 className="text-base font-bold text-white">Generate New Invoice</h2>
@@ -220,7 +209,7 @@ export default function VeloLedgerApp() {
               </div>
               <button 
                 type="submit"
-                className="w-full mt-3 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl transition-colors shadow-lg shadow-sky-600/20"
+                className="w-full mt-3 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl transition-colors shadow-lg shadow-sky-600/25 cursor-pointer"
               >
                 Create & Sync to Dashboard
               </button>
@@ -234,28 +223,28 @@ export default function VeloLedgerApp() {
       <nav className="fixed bottom-0 left-0 right-0 bg-[#090d16]/95 backdrop-blur border-t border-slate-800/80 px-6 py-3 flex justify-between items-center max-w-lg mx-auto text-xs font-medium text-slate-400 z-50">
         <button 
           onClick={() => setActiveTab('dashboard')} 
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'dashboard' ? 'text-sky-400 font-bold' : 'hover:text-slate-200'}`}
+          className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${activeTab === 'dashboard' ? 'text-sky-400 font-bold' : 'hover:text-slate-200'}`}
         >
           <span>📊</span>
           <span>Dashboard</span>
         </button>
         <button 
           onClick={() => setActiveTab('ledger')} 
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'ledger' ? 'text-sky-400 font-bold' : 'hover:text-slate-200'}`}
+          className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${activeTab === 'ledger' ? 'text-sky-400 font-bold' : 'hover:text-slate-200'}`}
         >
           <span>📁</span>
           <span>Ledger</span>
         </button>
         <button 
           onClick={() => setActiveTab('chasers')} 
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'chasers' ? 'text-sky-400 font-bold' : 'hover:text-slate-200'}`}
+          className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${activeTab === 'chasers' ? 'text-sky-400 font-bold' : 'hover:text-slate-200'}`}
         >
           <span>⚡</span>
           <span>Chasers</span>
         </button>
         <button 
           onClick={() => setActiveTab('invoices')} 
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'invoices' ? 'text-sky-400 font-bold' : 'hover:text-slate-200'}`}
+          className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${activeTab === 'invoices' ? 'text-sky-400 font-bold' : 'hover:text-slate-200'}`}
         >
           <span>📄</span>
           <span>Invoices</span>
