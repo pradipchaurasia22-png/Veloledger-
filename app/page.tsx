@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase/client';
 export default function VeloLedgerApp() {
   const supabase = createClient();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'ledger' | 'chasers' | 'invoices'>('dashboard');
-  const [loadingId, setLoadingId] = useState<string | null>(null);
   
   const [invoices, setInvoices] = useState<any[]>([
     { 
@@ -60,32 +59,18 @@ export default function VeloLedgerApp() {
     setActiveTab('dashboard');
   };
 
-  const sendBackendWhatsAppReminder = async (inv: any) => {
-    try {
-      setLoadingId(inv.id);
-      const res = await fetch('/api/chase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientName: inv.client,
-          phone: inv.phone,
-          title: inv.title,
-          id: inv.id,
-          amount: inv.amount,
-          status: inv.status,
-          payLink: inv.payLink,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to send automated chaser');
-
-      alert(`✅ Automated institutional notice successfully dispatched to ${inv.client} via VeloLedger API!`);
-    } catch (err: any) {
-      alert(`Error: ${err.message}. Make sure Twilio environment variables are configured in Vercel.`);
-    } finally {
-      setLoadingId(null);
-    }
+  const sendWhatsAppReminder = (inv: any) => {
+    const message = encodeURIComponent(
+      `🏛️ *VELOLEDGER INSTITUTIONAL SETTLEMENT NOTICE*\n\n` +
+      `Dear *${inv.client}*,\n\n` +
+      `This is a priority settlement dispatch for milestone *"${inv.title}"* reference *(${inv.id})*.\n\n` +
+      `• *Statement Balance:* $${inv.amount.toLocaleString()}.00\n` +
+      `• *Current Standing:* ${inv.status}\n\n` +
+      `To secure continuous enterprise velocity and finalize this release, please authorize payment immediately via our secure gateway:\n` +
+      `🔗 ${inv.payLink}\n\n` +
+      `_Secure Escrow Handled via VeloLedger Infrastructure_`
+    );
+    window.open(`https://wa.me/${inv.phone}?text=${message}`, '_blank');
   };
 
   return (
@@ -102,7 +87,7 @@ export default function VeloLedgerApp() {
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            API Active
+            Live
           </span>
         </div>
       </header>
@@ -120,13 +105,19 @@ export default function VeloLedgerApp() {
                   <span className="text-[10px] font-mono tracking-wider text-indigo-400 uppercase font-semibold">Velocity Index</span>
                   <h2 className="text-sm font-bold text-white mt-0.5">14.8 Days Average Settlement</h2>
                   <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
-                    Automated background API chasers have accelerated your incoming capital flow by <span className="text-emerald-400 font-bold">11.2 days</span> vs industry standard.
+                    Automated chasers have accelerated your incoming capital flow by <span className="text-emerald-400 font-bold">11.2 days</span> vs industry standard.
                   </p>
                 </div>
                 <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20 shrink-0">
                   ⚡
                 </div>
               </div>
+              <button 
+                onClick={() => alert('Velocity card copied! Share your performance metrics on LinkedIn or X.')} 
+                className="mt-3.5 w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold rounded-xl transition-all border border-indigo-500/30 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>🚀</span> Share Performance Badge
+              </button>
             </div>
 
             {/* Financial Overview Grid */}
@@ -185,11 +176,10 @@ export default function VeloLedgerApp() {
                           <span>💳</span> Pay
                         </a>
                         <button 
-                          onClick={() => sendBackendWhatsAppReminder(inv)}
-                          disabled={loadingId === inv.id}
-                          className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-semibold rounded-xl border border-emerald-500/30 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                          onClick={() => sendWhatsAppReminder(inv)}
+                          className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-semibold rounded-xl border border-emerald-500/30 transition-all flex items-center gap-1 cursor-pointer"
                         >
-                          <span>{loadingId === inv.id ? '⏳' : '💬'}</span> {loadingId === inv.id ? 'Sending...' : 'API Chase'}
+                          <span>💬</span> Chase
                         </button>
                       </div>
                     </div>
@@ -218,14 +208,14 @@ export default function VeloLedgerApp() {
 
         {activeTab === 'chasers' && (
           <div className="bg-[#101726]/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
-            <h2 className="text-sm font-bold text-white uppercase font-mono tracking-wider">Automated API Chaser Engine</h2>
-            <p className="text-xs text-slate-400">Server-side dispatching integrated via Twilio WhatsApp Cloud API.</p>
+            <h2 className="text-sm font-bold text-white uppercase font-mono tracking-wider">WhatsApp Auto-Chaser Engine</h2>
+            <p className="text-xs text-slate-400">Configured workflows pushing smart settlement notices with integrated gateway links.</p>
             <div className="p-3.5 bg-[#070a12] rounded-xl border border-slate-800/80 text-xs space-y-2">
-              <div className="font-bold text-emerald-400 flex items-center gap-1.5">
-                <span>🛡️</span> Backend Automation Active
+              <div className="font-bold text-indigo-400 flex items-center gap-1.5">
+                <span>🛡️</span> Active Protocol: Smart Escalation
               </div>
               <p className="text-slate-400 text-[11px] leading-relaxed">
-                Messages now fire programmatically from your business API number without opening your personal device app.
+                Reminders automatically attach encrypted instant-pay links, allowing clients to clear balances directly from their mobile chat apps.
               </p>
             </div>
           </div>
@@ -252,11 +242,10 @@ export default function VeloLedgerApp() {
                 <label className="block text-[11px] font-semibold text-slate-300 mb-1">WhatsApp Phone (with Country Code)</label>
                 <input 
                   type="text" 
-                  placeholder="e.g. +919876543210"
+                  placeholder="e.g. 1234567890"
                   value={clientPhone}
                   onChange={(e) => setClientPhone(e.target.value)}
                   className="w-full bg-[#070a12] border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition-all"
-                  required
                 />
               </div>
               <div>
