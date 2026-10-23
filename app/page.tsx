@@ -59,22 +59,28 @@ export default function VeloLedgerApp() {
     e.preventDefault();
     if (!clientName || !invoiceAmount) return;
 
-    const randomId = Math.floor(10 + Math.random() * 90);
+        const randomId = Math.floor(10 + Math.random() * 90);
+    const invoiceId = `INV-2024-${randomId}`;
+
     const newInv = {
-      id: `INV-2024-${randomId}`,
+      id: invoiceId,
       client: clientName,
       phone: clientPhone || '1234567890',
       title: invoiceTitle || 'Strategic Execution Milestone',
       amount: parseFloat(invoiceAmount),
       status: 'Locked (Escrow Pending)',
       date: 'Due in 30 days',
-      payLink: stripePayLink || 'https://buy.stripe.com/sample',
+      // This is the VeloLedger Client Portal URL sent in WhatsApp
+      payLink: `https://${window.location.host}/pay/${invoiceId}`, 
+      // This is the direct Stripe checkout link embedded inside the portal
+      stripePayLink: stripePayLink || 'https://buy.stripe.com/sample', 
       wireDetails: wireDetailsInput || 'Wise USD ACH: Community Federal Savings Bank | Acc: 445566778',
       upiId: upiIdInput || 'veloledger@upi',
       deliverableName: deliverableName || 'Final Production Assets.zip',
       deliverableUrl: deliverableUrl || 'https://drive.google.com/sample-locked-file',
       isLocked: true
     };
+
 
     setInvoices([newInv, ...invoices]);
     setClientName('');
