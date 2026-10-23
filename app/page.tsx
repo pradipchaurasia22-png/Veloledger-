@@ -1,10 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 
 export default function VeloLedgerApp() {
-  const supabase = createClient();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'vault' | 'chasers' | 'invoices'>('dashboard');
 
   const [invoices, setInvoices] = useState<any[]>([
@@ -17,8 +15,8 @@ export default function VeloLedgerApp() {
       status: 'Locked (Awaiting Settlement)', 
       date: 'Due Oct 24',
       payLink: '/pay/INV-2024-88',
-      stripePayLink: 'https://buy.stripe.com/test_12345',
-      wireDetails: 'Wise US ACH: Bank of America | Acc: 987654321 | Routing: 121000358',
+      stripePayLink: 'https://rzp.io/l/sample_link',
+      wireDetails: 'Wise USD ACH: Bank of America | Acc: 987654321 | Routing: 121000358',
       upiId: 'veloledger@upi',
       deliverableName: 'Acme_Brand_Guidelines_v2.fig + Vector Assets',
       deliverableUrl: 'https://figma.com/@sample-locked-asset',
@@ -33,7 +31,7 @@ export default function VeloLedgerApp() {
       status: 'Escrow Funded', 
       date: 'Release in 48h (Signed off)',
       payLink: '/pay/INV-2024-91',
-      stripePayLink: 'https://buy.stripe.com/test_67890',
+      stripePayLink: 'https://rzp.io/l/sample_link_2',
       wireDetails: 'Skydo USD Direct Account: Community Federal Savings Bank | Acc: 112233445',
       upiId: 'veloledger@upi',
       deliverableName: 'NextGen_Design_Sprint_Final_Code.zip',
@@ -69,7 +67,7 @@ export default function VeloLedgerApp() {
       status: 'Locked (Escrow Pending)',
       date: 'Due in 30 days',
       payLink: `${baseUrl}/pay/${invoiceId}`,
-      stripePayLink: stripePayLink || 'https://buy.stripe.com/sample',
+      stripePayLink: stripePayLink || 'https://rzp.io/l/sample_link',
       wireDetails: wireDetailsInput || 'Wise USD ACH: Community Federal Savings Bank | Acc: 445566778',
       upiId: upiIdInput || 'veloledger@upi',
       deliverableName: deliverableName || 'Final Production Assets.zip',
@@ -99,7 +97,7 @@ export default function VeloLedgerApp() {
       `I'm following up on the pending settlement for *"${inv.title}"* (${inv.id}).\n\n` +
       `• *Statement Balance:* $${inv.amount.toLocaleString()}.00\n` +
       `• *Deliverable Status:* 🔒 Locked in Secure Escrow Vault (${inv.deliverableName})\n\n` +
-      `Authorize settlement via Credit Card, Zero-Fee Wise Wire, or Instant UPI to unlock your assets:\n` +
+      `Authorize settlement via Razorpay/Card, Zero-Fee Wise Wire, or Instant UPI to unlock your assets:\n` +
       `🔗 ${fullPayUrl}\n\n` +
       `_Let me know once initiated so we can verify release keys._`
     );
@@ -134,7 +132,7 @@ export default function VeloLedgerApp() {
                   <span className="text-[10px] font-mono tracking-wider text-indigo-400 uppercase font-semibold">Velocity Index & ROI</span>
                   <h2 className="text-sm font-bold text-white mt-0.5">14.8 Days Average Settlement</h2>
                   <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
-                    Flexible gateways (Card, Wise Wire, UPI) have saved <span className="text-emerald-400 font-bold">$480 in fees</span> while maintaining instant deliverable protection.
+                    Flexible gateways (Razorpay, Stripe, Wise, UPI) have saved <span className="text-emerald-400 font-bold">$480 in fees</span> while maintaining instant deliverable protection.
                   </p>
                 </div>
                 <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20 shrink-0">
@@ -235,7 +233,7 @@ export default function VeloLedgerApp() {
                     <span className="text-indigo-400 font-mono">${inv.amount.toLocaleString()}</span>
                   </div>
                   <div className="text-slate-400 text-[11px] font-mono">File: {inv.deliverableName}</div>
-                  <div className="text-emerald-400 text-[10px]">Gateways: Card + Wise Wire + UPI Active 🔒</div>
+                  <div className="text-emerald-400 text-[10px]">Gateways: Razorpay + Wise Wire + UPI Active 🔒</div>
                 </div>
               ))}
             </div>
@@ -251,7 +249,7 @@ export default function VeloLedgerApp() {
                 <span>🛡️</span> Zero-Risk Handovers
               </div>
               <p className="text-slate-400 text-[11px] leading-relaxed">
-                Clients choose between Card (Stripe), Low-Fee Bank Wire (Wise), or Instant UPI inside their portal.
+                Clients choose between Razorpay/Card, Low-Fee Bank Wire (Wise), or Instant UPI inside their portal.
               </p>
             </div>
           </div>
@@ -295,10 +293,10 @@ export default function VeloLedgerApp() {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Stripe Payment Link (Card/ApplePay URL)</label>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Instant Card Checkout Link (Razorpay / Stripe)</label>
                 <input 
                   type="text" 
-                  placeholder="e.g. https://buy.stripe.com/..."
+                  placeholder="e.g. https://rzp.io/l/... or https://buy.stripe.com/..."
                   value={stripePayLink}
                   onChange={(e) => setStripePayLink(e.target.value)}
                   className="w-full bg-[#070a12] border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition-all"
