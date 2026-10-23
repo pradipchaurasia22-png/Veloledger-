@@ -56,6 +56,10 @@ export default function ClientPayPortal() {
       .eq('id', invoiceId);
   };
 
+  const handleDownloadPDF = () => {
+    window.print();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#070a12] text-slate-100 flex items-center justify-center font-mono text-xs">
@@ -137,6 +141,14 @@ export default function ClientPayPortal() {
               </div>
             )}
           </div>
+
+          {/* PDF Receipt Download Trigger */}
+          <button 
+            onClick={handleDownloadPDF}
+            className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <span>📄</span> Save / Print Official Invoice PDF
+          </button>
 
           {!simulatedPaid && (
             <div className="space-y-3 pt-1">
