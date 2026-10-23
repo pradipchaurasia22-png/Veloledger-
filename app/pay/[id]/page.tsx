@@ -10,13 +10,12 @@ export default function ClientPayPortal() {
   const [simulatedPaid, setSimulatedPaid] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'wire' | 'upi'>('stripe');
 
-  // Demo invoice lookup fallback
   const invoice = {
     id: invoiceId,
     client: 'Acme Studio',
     title: 'Brand Identity Milestone II',
     amount: 4250,
-    payLink: 'https://buy.stripe.com/test_12345',
+    stripePayLink: 'https://rzp.io/l/sample_link',
     wireDetails: 'Wise US ACH: Bank of America | Acc: 987654321 | Routing: 121000358',
     upiId: 'veloledger@upi',
     deliverableName: 'Acme_Brand_Guidelines_v2.fig + Vector Assets',
@@ -28,7 +27,6 @@ export default function ClientPayPortal() {
   return (
     <div className="min-h-screen bg-[#070a12] text-slate-100 p-6 flex flex-col justify-between font-sans">
       <div className="max-w-md mx-auto w-full space-y-5 pt-4">
-        {/* Header */}
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
             <span>🛡️</span> VELOLEDGER SECURE ESCROW VAULT
@@ -37,7 +35,6 @@ export default function ClientPayPortal() {
           <p className="text-xs text-slate-400">Prepared for <strong className="text-slate-200">{invoice.client}</strong></p>
         </div>
 
-        {/* Invoice Card */}
         <div className="bg-[#101726] border border-slate-800 rounded-2xl p-5 space-y-4 shadow-2xl">
           <div className="flex justify-between items-start border-b border-slate-800/80 pb-4">
             <div>
@@ -51,7 +48,6 @@ export default function ClientPayPortal() {
             </div>
           </div>
 
-          {/* Locked Asset Section */}
           <div className="bg-[#070a12] border border-slate-800/90 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
@@ -90,7 +86,6 @@ export default function ClientPayPortal() {
             )}
           </div>
 
-          {/* Payment Gateway Selectors */}
           {!simulatedPaid && (
             <div className="space-y-3 pt-1">
               <div className="grid grid-cols-3 gap-1 bg-[#070a12] p-1 rounded-xl border border-slate-800 text-[11px]">
@@ -123,12 +118,12 @@ export default function ClientPayPortal() {
               {paymentMethod === 'stripe' && (
                 <div className="space-y-2">
                   <a 
-                    href={invoice.payLink}
+                    href={invoice.stripePayLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition-all shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <span>💳</span> Pay via Card / Apple Pay (Stripe)
+                    <span>💳</span> Pay via Razorpay / Card / Apple Pay
                   </a>
                   <button 
                     onClick={() => setSimulatedPaid(true)}
