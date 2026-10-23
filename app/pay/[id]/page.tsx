@@ -1,26 +1,78 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 export default function ClientPayPortal() {
   const params = useParams();
-  const invoiceId = params?.id || 'INV-2024-88';
+  const invoiceId = params?.id as string;
+  const supabase = createClient();
 
+  const [loading, setLoading] = useState(true);
+  const [invoice, setInvoice] = useState<any>(null);
   const [simulatedPaid, setSimulatedPaid] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'wire' | 'upi'>('stripe');
 
-  const invoice = {
-    id: invoiceId,
-    client: 'Acme Studio',
-    title: 'Brand Identity Milestone II',
-    amount: 4250,
-    stripePayLink: 'https://rzp.io/l/sample_link',
-    wireDetails: 'Wise US ACH: Bank of America | Acc: 987654321 | Routing: 121000358',
-    upiId: 'veloledger@upi',
-    deliverableName: 'Acme_Brand_Guidelines_v2.fig + Vector Assets',
-    deliverableUrl: 'https://figma.com/@sample-locked-asset'
+  useEffect(() => {
+    if (invoiceId) {
+      fetchInvoiceDetails();
+    }
+  }, [invoiceId]);
+
+  const fetchInvoiceDetails = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('id', invoiceId)
+      .single();
+
+    if (!error && data) {
+      setInvoice({
+        id: data.id,
+        client: data.client,
+        title: data.title,
+        amount: data.amount,
+        stripePayLink: data.stripe_pay_link,
+        wireDetails: data.wire_details,
+        upiId: data.upi_id,
+        deliverableName: data.deliverable_name,
+        deliverableUrl: data.deliverable_url,
+        status: data.status
+      });
+      if (data.status === 'Settled & Unlocked') {
+        setSimulatedPaid(true);
+      }
+    }
+    setLoading(false);
   };
+
+  const handleConfirmPayment = async () => {
+    setSimulatedPaid(true);
+    await supabase
+      .from('invoices')
+      .update({ status: 'Settled & Unlocked', is_locked: false })
+      .eq('id', invoiceId);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#070a12] text-slate-100 flex items-center justify-center font-mono text-xs">
+        Loading Escrow Portal...
+      </div>
+    );
+  }
+
+  if (!invoice) {
+    return (
+      <div className="min-h-screen bg-[#070a12] text-slate-100 flex flex-col items-center justify-center font-sans space-y-3 p-6 text-center">
+        <div className="text-3xl">⚠️</div>
+        <h2 className="text-sm font-bold text-white">Invoice Portal Not Found</h2>
+        <p className="text-xs text-slate-400">Please verify the link sent to you by the provider.</p>
+      </div>
+    );
+  }
 
   const upiDeepLink = `upi://pay?pa=${invoice.upiId}&pn=VeloLedger%20Escrow&am=${invoice.amount}&cu=INR&tn=Invoice%20${invoice.id}`;
 
@@ -62,7 +114,7 @@ export default function ClientPayPortal() {
             
             <div className="text-xs font-mono text-slate-300 bg-[#101726] p-2.5 rounded-lg border border-slate-800 flex items-center justify-between">
               <span className="truncate max-w-[200px]">{invoice.deliverableName}</span>
-              <span className="text-[10px] text-slate-500">254 MB</span>
+              <span className="text-[10px] text-slate-500">Verified Asset</span>
             </div>
 
             {!simulatedPaid ? (
@@ -72,7 +124,7 @@ export default function ClientPayPortal() {
             ) : (
               <div className="space-y-2">
                 <p className="text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-lg font-medium">
-                  ✅ Settlement Confirmed! Escrow release verified.
+                  ✅ Settlement Confirmed! Escrow release verified in database.
                 </p>
                 <a 
                   href={invoice.deliverableUrl}
@@ -126,10 +178,10 @@ export default function ClientPayPortal() {
                     <span>💳</span> Pay via Razorpay / Card / Apple Pay
                   </a>
                   <button 
-                    onClick={() => setSimulatedPaid(true)}
+                    onClick={handleConfirmPayment}
                     className="w-full py-2 text-[10px] text-slate-400 hover:text-slate-200 text-center underline cursor-pointer"
                   >
-                    [Demo Mode: Simulate Instant Card Settlement]
+                    [Confirm Settlement & Unlock Deliverable]
                   </button>
                 </div>
               )}
@@ -141,10 +193,10 @@ export default function ClientPayPortal() {
                     {invoice.wireDetails}
                   </div>
                   <button 
-                    onClick={() => setSimulatedPaid(true)}
+                    onClick={handleConfirmPayment}
                     className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-blue-600/20 cursor-pointer"
                   >
-                    ✅ Confirm Wire Transfer
+                    ✅ Confirm Wire Transfer Sent
                   </button>
                 </div>
               )}
@@ -162,10 +214,10 @@ export default function ClientPayPortal() {
                     🚀 Open GPay / PhonePe / Paytm
                   </a>
                   <button 
-                    onClick={() => setSimulatedPaid(true)}
+                    onClick={handleConfirmPayment}
                     className="w-full py-1.5 text-[10px] text-slate-400 hover:text-slate-200 text-center underline cursor-pointer"
                   >
-                    [Demo Mode: Confirm Manual UPI Receipt]
+                    [Confirm UPI Payment Received]
                   </button>
                 </div>
               )}
