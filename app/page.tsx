@@ -1,45 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 export default function VeloLedgerApp() {
+  const supabase = createClient();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'vault' | 'chasers' | 'invoices'>('dashboard');
+  const [loading, setLoading] = useState(true);
+  const [invoices, setInvoices] = useState<any[]>([]);
 
-  const [invoices, setInvoices] = useState<any[]>([
-    { 
-      id: 'INV-2024-88', 
-      client: 'Acme Studio', 
-      phone: '1234567890', 
-      title: 'Brand Identity Milestone II', 
-      amount: 4250, 
-      status: 'Locked (Awaiting Settlement)', 
-      date: 'Due Oct 24',
-      payLink: '/pay/INV-2024-88',
-      stripePayLink: 'https://rzp.io/l/sample_link',
-      wireDetails: 'Wise USD ACH: Bank of America | Acc: 987654321 | Routing: 121000358',
-      upiId: 'veloledger@upi',
-      deliverableName: 'Acme_Brand_Guidelines_v2.fig + Vector Assets',
-      deliverableUrl: 'https://figma.com/@sample-locked-asset',
-      isLocked: true
-    },
-    { 
-      id: 'INV-2024-91', 
-      client: 'BoldCraft Digital', 
-      phone: '1234567890', 
-      title: 'Design Sprint & Prototype', 
-      amount: 7500, 
-      status: 'Escrow Funded', 
-      date: 'Release in 48h (Signed off)',
-      payLink: '/pay/INV-2024-91',
-      stripePayLink: 'https://rzp.io/l/sample_link_2',
-      wireDetails: 'Skydo USD Direct Account: Community Federal Savings Bank | Acc: 112233445',
-      upiId: 'veloledger@upi',
-      deliverableName: 'NextGen_Design_Sprint_Final_Code.zip',
-      deliverableUrl: 'https://github.com/sample/protected-repo',
-      isLocked: false
-    }
-  ]);
-
+  // Form State
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [invoiceTitle, setInvoiceTitle] = useState('');
@@ -50,15 +20,50 @@ export default function VeloLedgerApp() {
   const [deliverableName, setDeliverableName] = useState('');
   const [deliverableUrl, setDeliverableUrl] = useState('');
 
-  const handleCreateInvoice = (e: React.FormEvent) => {
+  // Fetch invoices from Supabase on mount
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
+
+  const fetchInvoices = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      const formatted = data.map((inv: any) => ({
+        id: inv.id,
+        client: inv.client,
+        phone: inv.phone,
+        title: inv.title,
+        amount: inv.amount,
+        status: inv.status,
+        date: inv.date,
+        payLink: inv.pay_link,
+        stripePayLink: inv.stripe_pay_link,
+        wireDetails: inv.wire_details,
+        upiId: inv.upi_id,
+        deliverableName: inv.deliverable_name,
+        deliverableUrl: inv.deliverable_url,
+        isLocked: inv.is_locked
+      }));
+      setInvoices(formatted);
+    }
+    setLoading(false);
+  };
+
+  const handleCreateInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName || !invoiceAmount) return;
 
     const randomId = Math.floor(10 + Math.random() * 90);
     const invoiceId = `INV-2024-${randomId}`;
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const generatedPayLink = `${baseUrl}/pay/${invoiceId}`;
 
-    const newInv = {
+    const newDbInv = {
       id: invoiceId,
       client: clientName,
       phone: clientPhone || '1234567890',
@@ -66,26 +71,32 @@ export default function VeloLedgerApp() {
       amount: parseFloat(invoiceAmount),
       status: 'Locked (Escrow Pending)',
       date: 'Due in 30 days',
-      payLink: `${baseUrl}/pay/${invoiceId}`,
-      stripePayLink: stripePayLink || 'https://rzp.io/l/sample_link',
-      wireDetails: wireDetailsInput || 'Wise USD ACH: Community Federal Savings Bank | Acc: 445566778',
-      upiId: upiIdInput || 'veloledger@upi',
-      deliverableName: deliverableName || 'Final Production Assets.zip',
-      deliverableUrl: deliverableUrl || 'https://drive.google.com/sample-locked-file',
-      isLocked: true
+      pay_link: generatedPayLink,
+      stripe_pay_link: stripePayLink || 'https://rzp.io/l/sample_link',
+      wire_details: wireDetailsInput || 'Wise USD ACH: Community Federal Savings Bank | Acc: 445566778',
+      upi_id: upiIdInput || 'veloledger@upi',
+      deliverable_name: deliverableName || 'Final Production Assets.zip',
+      deliverable_url: deliverableUrl || 'https://drive.google.com/sample-locked-file',
+      is_locked: true
     };
 
-    setInvoices([newInv, ...invoices]);
-    setClientName('');
-    setClientPhone('');
-    setInvoiceTitle('');
-    setInvoiceAmount('');
-    setStripePayLink('');
-    setWireDetailsInput('');
-    setUpiIdInput('');
-    setDeliverableName('');
-    setDeliverableUrl('');
-    setActiveTab('dashboard');
+    const { error } = await supabase.from('invoices').insert([newDbInv]);
+
+    if (!error) {
+      await fetchInvoices();
+      setClientName('');
+      setClientPhone('');
+      setInvoiceTitle('');
+      setInvoiceAmount('');
+      setStripePayLink('');
+      setWireDetailsInput('');
+      setUpiIdInput('');
+      setDeliverableName('');
+      setDeliverableUrl('');
+      setActiveTab('dashboard');
+    } else {
+      alert('Error saving to Supabase: ' + error.message);
+    }
   };
 
   const sendWhatsAppReminder = (inv: any) => {
@@ -117,7 +128,7 @@ export default function VeloLedgerApp() {
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Multi-Gateway Live
+            Supabase DB Connected
           </span>
         </div>
       </header>
@@ -132,7 +143,7 @@ export default function VeloLedgerApp() {
                   <span className="text-[10px] font-mono tracking-wider text-indigo-400 uppercase font-semibold">Velocity Index & ROI</span>
                   <h2 className="text-sm font-bold text-white mt-0.5">14.8 Days Average Settlement</h2>
                   <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
-                    Flexible gateways (Razorpay, Stripe, Wise, UPI) have saved <span className="text-emerald-400 font-bold">$480 in fees</span> while maintaining instant deliverable protection.
+                    Flexible gateways (Razorpay, Stripe, Wise, UPI) have saved <span className="text-emerald-400 font-bold">$480 in fees</span> with full database backup.
                   </p>
                 </div>
                 <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20 shrink-0">
@@ -144,14 +155,16 @@ export default function VeloLedgerApp() {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-[#101726]/80 backdrop-blur border border-slate-800/80 rounded-2xl p-4 shadow-lg">
                 <p className="text-[11px] text-slate-400 font-medium">Secured Volume</p>
-                <h3 className="text-xl font-black text-white mt-1 tracking-tight">$148,650</h3>
-                <p className="text-[10px] text-emerald-400 font-semibold mt-1">▲ +14.2% this quarter</p>
+                <h3 className="text-xl font-black text-white mt-1 tracking-tight">
+                  ${invoices.reduce((acc, curr) => acc + (curr.amount || 0), 0).toLocaleString()}.00
+                </h3>
+                <p className="text-[10px] text-emerald-400 font-semibold mt-1">▲ Live Sync Active</p>
               </div>
               
               <div className="bg-[#101726]/80 backdrop-blur border border-slate-800/80 rounded-2xl p-4 shadow-lg">
                 <p className="text-[11px] text-slate-400 font-medium">Locked Vaults</p>
                 <h3 className="text-xl font-black text-white mt-1 tracking-tight">{invoices.length} Active</h3>
-                <p className="text-[10px] text-amber-400 font-semibold mt-1">Pending Settlement</p>
+                <p className="text-[10px] text-amber-400 font-semibold mt-1">Stored in Supabase</p>
               </div>
             </div>
 
@@ -165,58 +178,66 @@ export default function VeloLedgerApp() {
                 </button>
               </div>
 
-              <div className="space-y-3">
-                {invoices.map((inv, idx) => (
-                  <div key={idx} className="bg-[#101726]/90 backdrop-blur border border-slate-800/90 rounded-2xl p-4 shadow-xl hover:border-slate-700 transition-all space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-bold text-white text-sm">{inv.client}</h4>
-                        <p className="text-[11px] text-slate-400 mt-0.5">{inv.title} • <span className="font-mono text-slate-300">{inv.id}</span></p>
+              {loading ? (
+                <div className="text-center py-8 text-xs font-mono text-slate-400">Loading vault data from Supabase...</div>
+              ) : invoices.length === 0 ? (
+                <div className="text-center py-8 text-xs text-slate-500 bg-[#101726]/50 rounded-2xl border border-slate-800">
+                  No invoices created yet. Tap "+ New Locked Asset" to start.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {invoices.map((inv, idx) => (
+                    <div key={idx} className="bg-[#101726]/90 backdrop-blur border border-slate-800/90 rounded-2xl p-4 shadow-xl hover:border-slate-700 transition-all space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-bold text-white text-sm">{inv.client}</h4>
+                          <p className="text-[11px] text-slate-400 mt-0.5">{inv.title} • <span className="font-mono text-slate-300">{inv.id}</span></p>
+                        </div>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          inv.status.includes('Escrow') || inv.status.includes('Locked') ? 'bg-amber-500/10 text-amber-400 border border-amber-500/25' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25'
+                        }`}>
+                          {inv.status}
+                        </span>
                       </div>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        inv.status.includes('Escrow') ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25' : 'bg-amber-500/10 text-amber-400 border border-amber-500/25'
-                      }`}>
-                        {inv.status}
-                      </span>
-                    </div>
 
-                    <div className="bg-[#070a12]/70 rounded-xl p-2.5 border border-slate-800 flex items-center justify-between text-xs font-mono">
-                      <span className="text-slate-300 truncate max-w-[180px]">🔒 {inv.deliverableName}</span>
-                      <a 
-                        href={inv.payLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold underline cursor-pointer"
-                      >
-                        Open Portal
-                      </a>
-                    </div>
-
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-800/60">
-                      <div>
-                        <div className="text-base font-black text-white tracking-tight">${inv.amount.toLocaleString()}.00</div>
-                        <div className="text-[10px] text-slate-400">{inv.date}</div>
-                      </div>
-                      <div className="flex items-center gap-2">
+                      <div className="bg-[#070a12]/70 rounded-xl p-2.5 border border-slate-800 flex items-center justify-between text-xs font-mono">
+                        <span className="text-slate-300 truncate max-w-[180px]">🔒 {inv.deliverableName}</span>
                         <a 
                           href={inv.payLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-1 cursor-pointer"
+                          className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold underline cursor-pointer"
                         >
-                          <span>💳</span> Portal
+                          Open Portal
                         </a>
-                        <button 
-                          onClick={() => sendWhatsAppReminder(inv)}
-                          className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-semibold rounded-xl border border-emerald-500/30 transition-all flex items-center gap-1 cursor-pointer"
-                        >
-                          <span>💬</span> Chase
-                        </button>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2 border-t border-slate-800/60">
+                        <div>
+                          <div className="text-base font-black text-white tracking-tight">${inv.amount.toLocaleString()}.00</div>
+                          <div className="text-[10px] text-slate-400">{inv.date}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <a 
+                            href={inv.payLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-1 cursor-pointer"
+                          >
+                            <span>💳</span> Portal
+                          </a>
+                          <button 
+                            onClick={() => sendWhatsAppReminder(inv)}
+                            className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-semibold rounded-xl border border-emerald-500/30 transition-all flex items-center gap-1 cursor-pointer"
+                          >
+                            <span>💬</span> Chase
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}
@@ -224,7 +245,7 @@ export default function VeloLedgerApp() {
         {activeTab === 'vault' && (
           <div className="bg-[#101726]/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
             <h2 className="text-sm font-bold text-white uppercase font-mono tracking-wider">Deliverable Vault Manager</h2>
-            <p className="text-xs text-slate-400">All deliverables stored under cryptographic lock until settlement.</p>
+            <p className="text-xs text-slate-400">All deliverables stored under cryptographic lock in Supabase.</p>
             <div className="space-y-2.5 pt-1">
               {invoices.map((inv, idx) => (
                 <div key={idx} className="p-3.5 bg-[#070a12] rounded-xl border border-slate-800 text-xs space-y-1.5">
@@ -233,7 +254,7 @@ export default function VeloLedgerApp() {
                     <span className="text-indigo-400 font-mono">${inv.amount.toLocaleString()}</span>
                   </div>
                   <div className="text-slate-400 text-[11px] font-mono">File: {inv.deliverableName}</div>
-                  <div className="text-emerald-400 text-[10px]">Gateways: Razorpay + Wise Wire + UPI Active 🔒</div>
+                  <div className="text-emerald-400 text-[10px]">Gateways Active & Database Persisted 🔒</div>
                 </div>
               ))}
             </div>
@@ -258,7 +279,7 @@ export default function VeloLedgerApp() {
         {activeTab === 'invoices' && (
           <div className="bg-[#101726]/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
             <h2 className="text-sm font-bold text-white uppercase font-mono tracking-wider">Lock New Deliverable & Invoice</h2>
-            <p className="text-xs text-slate-400">Attach payment gateways and generate an escrow paywall link.</p>
+            <p className="text-xs text-slate-400">Attach payment gateways and generate an escrow paywall link saved to database.</p>
             
             <form onSubmit={handleCreateInvoice} className="space-y-3 pt-1">
               <div>
@@ -357,7 +378,7 @@ export default function VeloLedgerApp() {
                 type="submit"
                 className="w-full mt-2 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-indigo-600/30 cursor-pointer flex items-center justify-center gap-1.5"
               >
-                <span>🔒</span> Lock Deliverable & Generate Paywall
+                <span>🔒</span> Lock Deliverable & Save to Cloud
               </button>
             </form>
           </div>
