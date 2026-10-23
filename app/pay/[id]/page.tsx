@@ -39,7 +39,8 @@ export default function ClientPayPortal() {
         upiId: data.upi_id,
         deliverableName: data.deliverable_name,
         deliverableUrl: data.deliverable_url,
-        status: data.status
+        status: data.status,
+        date: data.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       });
       if (data.status === 'Settled & Unlocked') {
         setSimulatedPaid(true);
@@ -63,7 +64,7 @@ export default function ClientPayPortal() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#070a12] text-slate-100 flex items-center justify-center font-mono text-xs">
-        Loading Escrow Portal...
+        Loading Portal...
       </div>
     );
   }
@@ -72,105 +73,185 @@ export default function ClientPayPortal() {
     return (
       <div className="min-h-screen bg-[#070a12] text-slate-100 flex flex-col items-center justify-center font-sans space-y-3 p-6 text-center">
         <div className="text-3xl">⚠️</div>
-        <h2 className="text-sm font-bold text-white">Invoice Portal Not Found</h2>
-        <p className="text-xs text-slate-400">Please verify the link sent to you by the provider.</p>
+        <h2 className="text-sm font-bold text-white">Record Not Found</h2>
+        <p className="text-xs text-slate-400">Please verify the link sent by your service provider.</p>
       </div>
     );
   }
 
   const upiDeepLink = `upi://pay?pa=${invoice.upiId}&pn=VeloLedger%20Escrow&am=${invoice.amount}&cu=INR&tn=Invoice%20${invoice.id}`;
+  const currentDateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
     <>
-      {/* Print-specific style rules */}
       <style jsx global>{`
         @media print {
           body {
             background-color: #ffffff !important;
-            color: #000000 !important;
+            color: #0f172a !important;
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif !important;
           }
           .no-print {
             display: none !important;
           }
-          .print-card {
+          .invoice-sheet {
             background-color: #ffffff !important;
-            border: 1px solid #cbd5e1 !important;
-            color: #0f172a !important;
+            border: none !important;
             box-shadow: none !important;
-          }
-          .print-text-dark {
+            padding: 0 !important;
             color: #0f172a !important;
           }
-          .print-text-muted {
-            color: #64748b !important;
+          .invoice-border {
+            border-color: #e2e8f0 !important;
           }
-          .print-bg-light {
+          .invoice-bg-light {
             background-color: #f8fafc !important;
-            border: 1px solid #e2e8f0 !important;
           }
         }
       `}</style>
 
-      <div className="min-h-screen bg-[#070a12] text-slate-100 p-6 flex flex-col justify-between font-sans print:p-0 print:min-h-0">
-        <div className="max-w-md mx-auto w-full space-y-5 pt-4 print:pt-0">
-          
-          {/* Header */}
-          <div className="text-center space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 print:border-slate-300 print:text-slate-800">
-              <span>🛡️</span> VELOLEDGER SECURE ESCROW VAULT
+      <div className="min-h-screen bg-[#070a12] text-slate-100 p-4 sm:p-8 flex flex-col justify-between font-sans print:p-0 print:bg-white print:text-slate-900">
+        
+        {/* ==================== STATE 1: SETTLED OFFICIAL TAX INVOICE ==================== */}
+        {simulatedPaid ? (
+          <div className="max-w-xl mx-auto w-full bg-[#101726] border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl invoice-sheet space-y-6">
+            
+            {/* Action Bar (Screen Only) */}
+            <div className="no-print flex justify-between items-center border-b border-slate-800 pb-4">
+              <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                PAID & SETTLED
+              </span>
+              <button 
+                onClick={handleDownloadPDF}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <span>📥</span> Download PDF Invoice
+              </button>
             </div>
-            <h1 className="text-xl font-black text-white tracking-tight print:text-slate-900">Milestone Settlement Receipt</h1>
-            <p className="text-xs text-slate-400 print:text-slate-600">Prepared for <strong className="text-slate-200 print:text-slate-900">{invoice.client}</strong></p>
-          </div>
 
-          {/* Main Card */}
-          <div className="bg-[#101726] border border-slate-800 rounded-2xl p-5 space-y-4 shadow-2xl print-card">
-            <div className="flex justify-between items-start border-b border-slate-800/80 print:border-slate-200 pb-4">
+            {/* Header */}
+            <div className="flex justify-between items-start border-b border-slate-800/80 invoice-border pb-6">
               <div>
-                <p className="text-[10px] text-slate-400 print-text-muted font-mono uppercase">Reference ID</p>
-                <h3 className="text-sm font-bold text-white print-text-dark mt-0.5">{invoice.id}</h3>
-                <p className="text-xs text-slate-300 print-text-dark mt-1">{invoice.title}</p>
+                <h1 className="text-xl font-black text-white tracking-tight font-mono uppercase print:text-slate-900">INVOICE</h1>
+                <p className="text-xs text-slate-400 print:text-slate-600 mt-0.5">VeloLedger Enterprise Services</p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] text-slate-400 print-text-muted font-mono uppercase">Amount</p>
-                <h3 className="text-lg font-black text-white print-text-dark mt-0.5">${invoice.amount.toLocaleString()}.00</h3>
+                <p className="text-xs font-bold font-mono text-indigo-400 print:text-slate-900">{invoice.id}</p>
+                <p className="text-[11px] text-slate-400 print:text-slate-600 mt-0.5">Date: {currentDateStr}</p>
               </div>
             </div>
 
-            <div className="bg-[#070a12] border border-slate-800/90 rounded-xl p-4 space-y-3 print-bg-light">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-200 print-text-dark flex items-center gap-1.5">
-                  <span>{simulatedPaid ? '📂' : '🔒'}</span> Protected Deliverable Asset
-                </span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
-                  simulatedPaid ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 print:bg-emerald-100 print:text-emerald-800' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                }`}>
-                  {simulatedPaid ? 'SETTLED & UNLOCKED' : 'LOCKED BY ESCROW'}
-                </span>
+            {/* Billing Metas */}
+            <div className="grid grid-cols-2 gap-4 text-xs border-b border-slate-800/80 invoice-border pb-6">
+              <div>
+                <p className="text-[10px] uppercase font-mono text-slate-400 print:text-slate-500 font-bold mb-1">Billed To</p>
+                <p className="font-bold text-white print:text-slate-900">{invoice.client}</p>
+                <p className="text-slate-400 print:text-slate-600 text-[11px] mt-0.5">Verified Client Account</p>
               </div>
-              
-              <div className="text-xs font-mono text-slate-300 print-text-dark bg-[#101726] print:bg-white p-2.5 rounded-lg border border-slate-800 print:border-slate-200 flex items-center justify-between">
-                <span className="truncate max-w-[200px]">{invoice.deliverableName}</span>
-                <span className="text-[10px] text-slate-500 print-text-muted">Verified Asset</span>
+              <div className="text-right">
+                <p className="text-[10px] uppercase font-mono text-slate-400 print:text-slate-500 font-bold mb-1">Status</p>
+                <p className="font-bold text-emerald-400 print:text-emerald-700">Paid in Full</p>
+                <p className="text-slate-400 print:text-slate-600 text-[11px] mt-0.5">Payment Ref: Escrow Verified</p>
+              </div>
+            </div>
+
+            {/* Itemized Table */}
+            <div className="space-y-3">
+              <p className="text-[10px] uppercase font-mono text-slate-400 print:text-slate-500 font-bold">Line Items</p>
+              <div className="bg-[#070a12] border border-slate-800 rounded-xl p-4 invoice-bg-light invoice-border space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-bold text-white print:text-slate-900">{invoice.title}</p>
+                    <p className="text-[11px] text-slate-400 print:text-slate-600 mt-0.5">Deliverable: {invoice.deliverableName}</p>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-white print:text-slate-900">${invoice.amount.toLocaleString()}.00</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Totals */}
+            <div className="border-t border-slate-800/80 invoice-border pt-4 space-y-1.5 text-xs">
+              <div className="flex justify-between text-slate-400 print:text-slate-600">
+                <span>Subtotal</span>
+                <span className="font-mono">${invoice.amount.toLocaleString()}.00</span>
+              </div>
+              <div className="flex justify-between text-slate-400 print:text-slate-600">
+                <span>Tax / Fees</span>
+                <span className="font-mono">$0.00</span>
+              </div>
+              <div className="flex justify-between text-sm font-black text-white print:text-slate-900 pt-2 border-t border-slate-800/50 invoice-border">
+                <span>Total Amount Paid</span>
+                <span className="font-mono text-emerald-400 print:text-slate-900">${invoice.amount.toLocaleString()}.00 USD</span>
+              </div>
+            </div>
+
+            {/* Unlocked Deliverable Link (Screen Only) */}
+            <div className="no-print bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 space-y-2">
+              <p className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                <span>📂</span> Unlocked Deliverable Access
+              </p>
+              <a 
+                href={invoice.deliverableUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs text-center rounded-xl transition-all shadow-lg shadow-emerald-600/20"
+              >
+                📥 Download Production Assets ({invoice.deliverableName})
+              </a>
+            </div>
+
+            {/* Footer */}
+            <div className="text-center text-[10px] text-slate-500 print:text-slate-400 font-mono pt-4 border-t border-slate-800/60 invoice-border">
+              Thank you for your business. Generated by VeloLedger Enterprise Infrastructure.
+            </div>
+          </div>
+        ) : (
+
+        /* ==================== STATE 2: PRE-PAYMENT SETTLEMENT PORTAL ==================== */
+          <div className="max-w-md mx-auto w-full space-y-5 pt-4">
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                <span>🛡️</span> VELOLEDGER SECURE ESCROW
+              </div>
+              <h1 className="text-xl font-black text-white tracking-tight">Milestone Settlement Notice</h1>
+              <p className="text-xs text-slate-400">Prepared for <strong className="text-slate-200">{invoice.client}</strong></p>
+            </div>
+
+            <div className="bg-[#101726] border border-slate-800 rounded-2xl p-5 space-y-4 shadow-2xl">
+              <div className="flex justify-between items-start border-b border-slate-800/80 pb-4">
+                <div>
+                  <p className="text-[10px] text-slate-400 font-mono uppercase">Notice Ref</p>
+                  <h3 className="text-sm font-bold text-white mt-0.5">{invoice.id}</h3>
+                  <p className="text-xs text-slate-300 mt-1">{invoice.title}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-slate-400 font-mono uppercase">Balance Due</p>
+                  <h3 className="text-lg font-black text-white mt-0.5">${invoice.amount.toLocaleString()}.00</h3>
+                </div>
               </div>
 
-              {simulatedPaid && (
-                <p className="text-[11px] text-emerald-400 print:text-emerald-800 bg-emerald-500/10 print:bg-emerald-50 border border-emerald-500/20 print:border-emerald-200 p-2.5 rounded-lg font-medium">
-                  ✅ Settlement Confirmed! Escrow release verified in database.
+              <div className="bg-[#070a12] border border-slate-800/90 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                    <span>🔒</span> Escrow Locked Asset
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                    PENDING PAYMENT
+                  </span>
+                </div>
+                
+                <div className="text-xs font-mono text-slate-300 bg-[#101726] p-2.5 rounded-lg border border-slate-800 flex items-center justify-between">
+                  <span className="truncate max-w-[200px]">{invoice.deliverableName}</span>
+                  <span className="text-[10px] text-slate-500">Sealed Asset</span>
+                </div>
+
+                <p className="text-[11px] text-amber-400/90 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-lg">
+                  ⚠️ Deliverable assets are held in escrow. Authorize settlement below to unlock files and generate your official tax invoice.
                 </p>
-              )}
-            </div>
+              </div>
 
-            {/* Print Action Trigger (Hidden in actual print output) */}
-            <button 
-              onClick={handleDownloadPDF}
-              className="no-print w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <span>📄</span> Save / Print Official Invoice PDF
-            </button>
-
-            {!simulatedPaid && (
-              <div className="no-print space-y-3 pt-1">
+              {/* Checkout Gateways */}
+              <div className="space-y-3 pt-1">
                 <div className="grid grid-cols-3 gap-1 bg-[#070a12] p-1 rounded-xl border border-slate-800 text-[11px]">
                   <button 
                     onClick={() => setPaymentMethod('stripe')}
@@ -206,20 +287,20 @@ export default function ClientPayPortal() {
                       rel="noopener noreferrer"
                       className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition-all shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer"
                     >
-                      <span>💳</span> Pay via Razorpay / Card / Apple Pay
+                      <span>💳</span> Pay via Card / Razorpay / Apple Pay
                     </a>
                     <button 
                       onClick={handleConfirmPayment}
                       className="w-full py-2 text-[10px] text-slate-400 hover:text-slate-200 text-center underline cursor-pointer"
                     >
-                      [Confirm Settlement & Unlock Deliverable]
+                      [Simulate Settlement & Generate Invoice]
                     </button>
                   </div>
                 )}
 
                 {paymentMethod === 'wire' && (
                   <div className="bg-[#070a12] border border-slate-800 rounded-xl p-4 text-center space-y-3">
-                    <div className="text-xs font-bold text-slate-200">Zero-Fee ACH / Bank Transfer</div>
+                    <div className="text-xs font-bold text-slate-200">Zero-Fee Bank Transfer</div>
                     <div className="bg-[#101726] border border-slate-800 p-2.5 rounded-lg text-[11px] font-mono text-blue-300 text-left select-all leading-relaxed">
                       {invoice.wireDetails}
                     </div>
@@ -227,7 +308,7 @@ export default function ClientPayPortal() {
                       onClick={handleConfirmPayment}
                       className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-blue-600/20 cursor-pointer"
                     >
-                      ✅ Confirm Wire Transfer Sent
+                      ✅ Confirm Transfer & Get Invoice
                     </button>
                   </div>
                 )}
@@ -253,13 +334,13 @@ export default function ClientPayPortal() {
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        <div className="text-center text-[10px] text-slate-500 print:text-slate-400 py-4 font-mono">
-          Secured & Verified by VeloLedger Enterprise Infrastructure
-        </div>
+            <div className="text-center text-[10px] text-slate-500 py-4 font-mono">
+              Secured & Verified by VeloLedger Enterprise Infrastructure
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
