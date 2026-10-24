@@ -143,11 +143,18 @@ export default function VeloLedgerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#070a12] text-slate-100 flex items-center justify-center font-mono text-xs">
+      <div className="min-h-screen bg-[#050811] text-slate-100 flex items-center justify-center font-mono text-xs">
         Connecting Vault Engine...
       </div>
     );
   }
+
+  // Filter invoices according to active bottom tab selection
+  const filteredInvoices = invoices.filter(inv => {
+    if (activeTab === 'vault') return inv.isLocked; // Vault shows strictly locked items
+    if (activeTab === 'chasers') return inv.isLocked; // Chasers shows pending locked items needing chase
+    return true; // Dashboard & Invoices show full list
+  });
 
   return (
     <div className="min-h-screen bg-[#050811] text-slate-100 pb-28 font-sans selection:bg-indigo-500/30">
@@ -213,7 +220,7 @@ export default function VeloLedgerDashboard() {
         {/* Section Header & Add Trigger */}
         <div className="flex justify-between items-center pt-1">
           <h3 className="text-xs font-black tracking-wider text-slate-300 uppercase font-mono">
-            ESCROW VAULT & INVOICES ({invoices.length})
+            ESCROW VAULT & INVOICES ({filteredInvoices.length})
           </h3>
           <button 
             onClick={() => setShowModal(true)}
@@ -225,89 +232,83 @@ export default function VeloLedgerDashboard() {
 
         {/* List Content Render */}
         <div className="space-y-3">
-          {invoices.length === 0 ? (
+          {filteredInvoices.length === 0 ? (
             <div className="bg-[#0b101d] border border-slate-800/80 rounded-2xl p-8 text-center text-slate-500 text-xs font-mono">
-              No locked deliverables found in database.
+              No matching records found for this view.
             </div>
           ) : (
-            invoices
-              .filter(inv => {
-                if (activeTab === 'vault') return inv.isLocked;
-                if (activeTab === 'invoices') return !inv.isLocked;
-                return true;
-              })
-              .map((inv) => {
-                const originUrl = typeof window !== 'undefined' ? window.location.origin : '';
-                const portalUrl = `${originUrl}/pay/${inv.id}`;
-                const waMessage = encodeURIComponent(
-                  `Hi ${inv.client}, your deliverable (${inv.title}) has been locked in VeloLedger Escrow. Complete settlement here: ${portalUrl}`
-                );
-                const waLink = inv.phone ? `https://wa.me/${inv.phone.replace(/[^0-9]/g, '')}?text=${waMessage}` : `https://wa.me/?text=${waMessage}`;
+            filteredInvoices.map((inv) => {
+              const originUrl = typeof window !== 'undefined' ? window.location.origin : '';
+              const portalUrl = `${originUrl}/pay/${inv.id}`;
+              const waMessage = encodeURIComponent(
+                `Hi ${inv.client}, your deliverable (${inv.title}) has been locked in VeloLedger Escrow. Complete settlement here: ${portalUrl}`
+              );
+              const waLink = inv.phone ? `https://wa.me/${inv.phone.replace(/[^0-9]/g, '')}?text=${waMessage}` : `https://wa.me/?text=${waMessage}`;
 
-                return (
-                  <div key={inv.id} className="bg-[#0b101d] border border-slate-800/80 rounded-2xl p-4 space-y-3 shadow-xl">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="text-base font-extrabold text-white">{inv.client}</h4>
-                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">{inv.title} • {inv.id}</p>
-                      </div>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono ${
-                        inv.isLocked ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      }`}>
-                        {inv.status}
-                      </span>
+              return (
+                <div key={inv.id} className="bg-[#0b101d] border border-slate-800/80 rounded-2xl p-4 space-y-3 shadow-xl">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="text-base font-extrabold text-white">{inv.client}</h4>
+                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">{inv.title} • {inv.id}</p>
                     </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                      inv.isLocked ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    }`}>
+                      {inv.status}
+                    </span>
+                  </div>
 
-                    {/* Sealed Deliverable Link Block */}
-                    <div className="bg-[#050811] border border-slate-800/90 rounded-xl p-3 flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-2 text-slate-300 font-medium truncate max-w-[200px]">
-                        <span>🔒</span> {inv.deliverableName || 'Sealed Asset'}
-                      </div>
-                      <a href={`/pay/${inv.id}`} target="_blank" className="text-indigo-400 font-bold hover:underline text-[11px]">
-                        Open Portal
+                  {/* Sealed Deliverable Link Block */}
+                  <div className="bg-[#050811] border border-slate-800/90 rounded-xl p-3 flex justify-between items-center text-xs">
+                    <div className="flex items-center gap-2 text-slate-300 font-medium truncate max-w-[200px]">
+                      <span>🔒</span> {inv.deliverableName || 'Sealed Asset'}
+                    </div>
+                    <a href={`/pay/${inv.id}`} target="_blank" className="text-indigo-400 font-bold hover:underline text-[11px]">
+                      Open Portal
+                    </a>
+                  </div>
+
+                  {/* Card Actions & Pricing */}
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-lg font-black text-white">${inv.amount.toLocaleString()}.00</span>
+                    
+                    <div className="flex items-center gap-2">
+                      <a 
+                        href={`/pay/${inv.id}`}
+                        target="_blank"
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1"
+                      >
+                        💳 Portal
                       </a>
-                    </div>
 
-                    {/* Card Actions & Pricing */}
-                    <div className="flex justify-between items-center pt-1">
-                      <span className="text-lg font-black text-white">${inv.amount.toLocaleString()}.00</span>
-                      
-                      <div className="flex items-center gap-2">
-                        <a 
-                          href={`/pay/${inv.id}`}
-                          target="_blank"
-                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1"
-                        >
-                          💳 Portal
-                        </a>
+                      <a 
+                        href={waLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 font-bold text-xs rounded-xl border border-emerald-500/30 transition-all flex items-center gap-1"
+                      >
+                        💬 Chase
+                      </a>
 
-                        <a 
-                          href={waLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 font-bold text-xs rounded-xl border border-emerald-500/30 transition-all flex items-center gap-1"
-                        >
-                          💬 Chase
-                        </a>
+                      <button 
+                        onClick={() => toggleInvoiceStatus(inv.id, inv.status)}
+                        className="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl border border-slate-700 cursor-pointer"
+                      >
+                        {inv.isLocked ? '🔓' : '🔒'}
+                      </button>
 
-                        <button 
-                          onClick={() => toggleInvoiceStatus(inv.id, inv.status)}
-                          className="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl border border-slate-700 cursor-pointer"
-                        >
-                          {inv.isLocked ? '🔓' : '🔒'}
-                        </button>
-
-                        <button 
-                          onClick={() => handleDeleteInvoice(inv.id)}
-                          className="px-2 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs rounded-xl border border-rose-500/20 cursor-pointer"
-                        >
-                          🗑️
-                        </button>
-                      </div>
+                      <button 
+                        onClick={() => handleDeleteInvoice(inv.id)}
+                        className="px-2 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs rounded-xl border border-rose-500/20 cursor-pointer"
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </div>
-                );
-              })
+                </div>
+              );
+            })
           )}
         </div>
       </div>
