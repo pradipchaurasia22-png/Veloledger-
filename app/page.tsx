@@ -229,9 +229,23 @@ export default function VeloLedgerDashboard() {
                 invoices.map((inv) => {
                   const originUrl = typeof window !== 'undefined' ? window.location.origin : '';
                   const portalUrl = `${originUrl}/pay/${inv.id}`;
-                  const waMessage = encodeURIComponent(
-                    `Hi ${inv.client}, your deliverable (${inv.title}) has been locked in VeloLedger Escrow. Complete settlement here: ${portalUrl}`
-                  );
+                  // ✅ Executive Rich WhatsApp Message Format:
+const waExecutiveMessage = `🏛️ *VELOLEDGER EXECUTIVE DISPATCH*
+
+Hi *${inv.client}*,
+
+I'm following up on the pending settlement for *"${inv.title}"* (${inv.id}).
+
+• *Statement Balance:* $${inv.amount ? inv.amount.toLocaleString() : '0'}.00
+• *Deliverable Status:* 🔒 Locked in Secure Escrow Vault (${inv.deliverableName || 'Sealed Asset'})
+
+Authorize settlement via Razorpay/Card, Zero-Fee Wise Wire, or Instant UPI to unlock your assets:
+🔗 ${portalUrl}
+
+_Let me know once initiated so we can verify release keys._`;
+
+const waMessage = encodeURIComponent(waExecutiveMessage);
+
                   const waLink = inv.phone ? `https://wa.me/${inv.phone.replace(/[^0-9]/g, '')}?text=${waMessage}` : `https://wa.me/?text=${waMessage}`;
 
                   return (
