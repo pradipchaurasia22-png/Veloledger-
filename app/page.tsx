@@ -14,6 +14,7 @@ export default function VeloLedgerDashboard() {
 
   // Form State
   const [client, setClient] = useState('');
+  const [phone, setPhone] = useState('');
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [deliverableName, setDeliverableName] = useState('');
@@ -36,7 +37,7 @@ export default function VeloLedgerDashboard() {
       return;
     }
 
-    setUserEmail(session.user.email || 'User');
+    setUserEmail(session.user.email || 'Agency Owner');
     await fetchInvoices();
     setLoading(false);
   };
@@ -76,6 +77,7 @@ export default function VeloLedgerDashboard() {
     const newInvoice = {
       id: `INV-${new Date().getFullYear()}-${Math.floor(10 + Math.random() * 90)}`,
       client,
+      phone,
       title,
       amount: parseFloat(amount),
       status: 'Locked',
@@ -83,7 +85,7 @@ export default function VeloLedgerDashboard() {
       deliverable_name: deliverableName || 'Final Production Assets.zip',
       deliverable_url: deliverableUrl || 'https://drive.google.com',
       stripe_pay_link: stripePayLink || 'https://buy.stripe.com',
-      wireDetails: wireDetails || 'ACH: 987654321 | Routing: 123456789',
+      wire_details: wireDetails || 'ACH: 987654321 | Routing: 123456789',
       upi_id: upiId || 'vendor@upi',
       user_id: user?.id
     };
@@ -95,12 +97,13 @@ export default function VeloLedgerDashboard() {
       setShowModal(false);
       resetForm();
     } else {
-      alert('Error creating invoice: ' + error.message);
+      alert('Error saving asset vault: ' + error.message);
     }
   };
 
   const resetForm = () => {
     setClient('');
+    setPhone('');
     setTitle('');
     setAmount('');
     setDeliverableName('');
@@ -127,13 +130,20 @@ export default function VeloLedgerDashboard() {
     fetchInvoices();
   };
 
+  const handleDeleteInvoice = async (id: string) => {
+    if (confirm('Are you sure you want to delete this invoice?')) {
+      await supabase.from('invoices').delete().eq('id', id);
+      fetchInvoices();
+    }
+  };
+
   const totalSecured = invoices.reduce((acc, inv) => acc + (inv.amount || 0), 0);
   const totalLocked = invoices.filter(i => i.isLocked).reduce((acc, inv) => acc + (inv.amount || 0), 0);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#070a12] text-slate-100 flex items-center justify-center font-mono text-xs">
-        Authenticating Vault...
+        Authenticating Vault Access...
       </div>
     );
   }
@@ -142,106 +152,137 @@ export default function VeloLedgerDashboard() {
     <div className="min-h-screen bg-[#070a12] text-slate-100 p-4 sm:p-6 font-sans">
       <div className="max-w-4xl mx-auto space-y-6">
         
-        {/* Navigation / Header */}
-        <div className="flex justify-between items-center bg-[#101726] border border-slate-800 p-4 rounded-2xl">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🛡️</span>
+        {/* Top Header / Auth Status */}
+        <div className="flex justify-between items-center bg-[#101726] border border-slate-800 p-4 rounded-2xl shadow-xl">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl">🛡️</span>
             <div>
               <h1 className="text-sm font-black text-white tracking-wide">VELOLEDGER VAULT</h1>
-              <p className="text-[10px] font-mono text-indigo-400">{userEmail}</p>
+              <p className="text-[10px] font-mono text-indigo-400 truncate max-w-[180px] sm:max-w-none">{userEmail}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setShowModal(true)}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all cursor-pointer"
+              className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all cursor-pointer"
             >
               + New Asset
             </button>
             <button 
               onClick={handleSignOut}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl border border-slate-700 transition-all cursor-pointer"
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl border border-slate-700 transition-all cursor-pointer"
             >
               Sign Out
             </button>
           </div>
         </div>
 
-        {/* Stats Metrics */}
+        {/* Financial Metrics */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          <div className="bg-[#101726] border border-slate-800 rounded-2xl p-4">
+          <div className="bg-[#101726] border border-slate-800 rounded-2xl p-4 shadow-lg">
             <p className="text-[10px] font-mono uppercase text-slate-400">Total Secured Volume</p>
             <p className="text-xl sm:text-2xl font-black text-white mt-1">${totalSecured.toLocaleString()}.00</p>
           </div>
-          <div className="bg-[#101726] border border-slate-800 rounded-2xl p-4">
+          <div className="bg-[#101726] border border-slate-800 rounded-2xl p-4 shadow-lg">
             <p className="text-[10px] font-mono uppercase text-amber-400">Escrow Locked Funds</p>
             <p className="text-xl sm:text-2xl font-black text-amber-400 mt-1">${totalLocked.toLocaleString()}.00</p>
           </div>
         </div>
 
-        {/* Invoice List */}
+        {/* Invoice Feed */}
         <div className="space-y-3">
           <h2 className="text-xs font-bold font-mono text-slate-400 uppercase tracking-wider">Active Deliverable Vaults</h2>
           
           {invoices.length === 0 ? (
             <div className="bg-[#101726] border border-slate-800 rounded-2xl p-8 text-center text-slate-500 text-xs font-mono">
-              No locked deliverables found. Click "+ New Asset" to create your first escrow milestone.
+              No locked deliverables found. Tap "+ New Asset" to create your first escrow milestone.
             </div>
           ) : (
-            invoices.map((inv) => (
-              <div key={inv.id} className="bg-[#101726] border border-slate-800 rounded-2xl p-4 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold font-mono text-indigo-400">{inv.id}</span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
-                        inv.isLocked ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      }`}>
-                        {inv.status}
-                      </span>
-                    </div>
-                    <h3 className="text-sm font-bold text-white mt-1">{inv.title}</h3>
-                    <p className="text-xs text-slate-400">{inv.client}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-base font-black text-white">${inv.amount.toLocaleString()}.00</p>
-                    <p className="text-[10px] font-mono text-slate-500">{inv.date}</p>
-                  </div>
-                </div>
+            invoices.map((inv) => {
+              const originUrl = typeof window !== 'undefined' ? window.location.origin : '';
+              const portalUrl = `${originUrl}/pay/${inv.id}`;
+              const waMessage = encodeURIComponent(
+                `Hi ${inv.client}, your deliverable (${inv.title}) has been locked in VeloLedger Escrow. Complete settlement here to instantly access files & receipt: ${portalUrl}`
+              );
+              const waLink = inv.phone ? `https://wa.me/${inv.phone.replace(/[^0-9]/g, '')}?text=${waMessage}` : `https://wa.me/?text=${waMessage}`;
 
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
-                  <a 
-                    href={`/pay/${inv.id}`}
-                    target="_blank"
-                    className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-center text-xs font-bold rounded-xl border border-slate-700 transition-all"
-                  >
-                    🔗 Portal Link
-                  </a>
-                  <button 
-                    onClick={() => toggleInvoiceStatus(inv.id, inv.status)}
-                    className="flex-1 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-bold rounded-xl border border-indigo-500/30 transition-all cursor-pointer"
-                  >
-                    {inv.isLocked ? '🔓 Unlock Asset' : '🔒 Lock Asset'}
-                  </button>
+              return (
+                <div key={inv.id} className="bg-[#101726] border border-slate-800 rounded-2xl p-4 space-y-3 shadow-xl">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold font-mono text-indigo-400">{inv.id}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
+                          inv.isLocked ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        }`}>
+                          {inv.status}
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-bold text-white mt-1">{inv.title}</h3>
+                      <p className="text-xs text-slate-400">{inv.client} {inv.phone && `(${inv.phone})`}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-base font-black text-white">${inv.amount.toLocaleString()}.00</p>
+                      <p className="text-[10px] font-mono text-slate-500">{inv.date}</p>
+                    </div>
+                  </div>
+
+                  {/* Actions Bar */}
+                  <div className="grid grid-cols-4 gap-2 pt-2 border-t border-slate-800/80 text-xs font-bold">
+                    <a 
+                      href={`/pay/${inv.id}`}
+                      target="_blank"
+                      className="py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-center rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-1"
+                    >
+                      <span>🔗</span> Link
+                    </a>
+
+                    <a 
+                      href={waLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-center rounded-xl border border-emerald-500/30 transition-all flex items-center justify-center gap-1"
+                    >
+                      <span>💬</span> Chase
+                    </a>
+
+                    <button 
+                      onClick={() => toggleInvoiceStatus(inv.id, inv.status)}
+                      className="py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-center rounded-xl border border-indigo-500/30 transition-all cursor-pointer"
+                    >
+                      {inv.isLocked ? '🔓 Unlock' : '🔒 Lock'}
+                    </button>
+
+                    <button 
+                      onClick={() => handleDeleteInvoice(inv.id)}
+                      className="py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-center rounded-xl border border-rose-500/20 transition-all cursor-pointer"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
-        {/* Create Invoice Modal */}
+        {/* Modal: Create Deliverable Asset */}
         {showModal && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-[#101726] border border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h3 className="text-sm font-bold text-white">Create Escrow Vault</h3>
-                <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white text-xs font-mono">✕ Close</button>
+                <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white text-xs font-mono cursor-pointer">✕ Close</button>
               </div>
 
               <form onSubmit={handleCreateInvoice} className="space-y-3">
                 <div>
                   <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1">Client Name</label>
                   <input type="text" required value={client} onChange={e => setClient(e.target.value)} placeholder="Acme Corp" className="w-full bg-[#070a12] border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1">Client WhatsApp Phone (Optional)</label>
+                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1234567890" className="w-full bg-[#070a12] border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1">Milestone Title</label>
