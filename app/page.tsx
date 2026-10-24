@@ -202,8 +202,8 @@ export default function VeloLedgerDashboard() {
               const originUrl = typeof window !== 'undefined' ? window.location.origin : '';
               const portalUrl = `${originUrl}/pay/${inv.id}`;
 
-              // Simple, natural WhatsApp message
-              const waSimpleText = `Hi ${inv.client}, here is your payment invoice link: ${portalUrl}`;
+              // Simple WhatsApp dispatch format
+              const waSimpleText = `Hi ${inv.client}, your deliverable (${inv.title}) has been locked in VeloLedger Escrow. Complete settlement here: ${portalUrl}`;
               const waMessage = encodeURIComponent(waSimpleText);
               const waLink = inv.phone ? `https://wa.me/${inv.phone.replace(/[^0-9]/g, '')}?text=${waMessage}` : `https://wa.me/?text=${waMessage}`;
 
