@@ -4,17 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-export default function VeloLedgerMain() {
+export default function VeloLedgerDashboard() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'vault' | 'invoices'>('dashboard');
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  // Modal Form State
-  const [showModal, setShowModal] = useState(false);
+  // Form State
   const [client, setClient] = useState('');
   const [phone, setPhone] = useState('');
   const [title, setTitle] = useState('');
@@ -24,6 +22,7 @@ export default function VeloLedgerMain() {
   const [stripePayLink, setStripePayLink] = useState('');
   const [wireDetails, setWireDetails] = useState('');
   const [upiId, setUpiId] = useState('');
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     checkUserAndFetchInvoices();
@@ -58,7 +57,7 @@ export default function VeloLedgerMain() {
         amount: inv.amount,
         status: inv.status,
         isLocked: inv.is_locked,
-        date: inv.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        date: inv.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         deliverableName: inv.deliverable_name,
         deliverableUrl: inv.deliverable_url,
         stripePayLink: inv.stripe_pay_link,
@@ -132,7 +131,7 @@ export default function VeloLedgerMain() {
   };
 
   const handleDeleteInvoice = async (id: string) => {
-    if (confirm('Are you sure you want to delete this record?')) {
+    if (confirm('Are you sure you want to delete this invoice?')) {
       await supabase.from('invoices').delete().eq('id', id);
       fetchInvoices();
     }
@@ -140,7 +139,6 @@ export default function VeloLedgerMain() {
 
   const totalSecured = invoices.reduce((acc, inv) => acc + (inv.amount || 0), 0);
   const totalLocked = invoices.filter(i => i.isLocked).reduce((acc, inv) => acc + (inv.amount || 0), 0);
-  const totalSettled = invoices.filter(i => !i.isLocked).reduce((acc, inv) => acc + (inv.amount || 0), 0);
 
   if (loading) {
     return (
@@ -160,7 +158,7 @@ export default function VeloLedgerMain() {
             <span className="text-2xl">🛡️</span>
             <div>
               <h1 className="text-sm font-black text-white tracking-wide">VELOLEDGER VAULT</h1>
-              <p className="text-[10px] font-mono text-indigo-400 truncate max-w-[160px] sm:max-w-none">{userEmail}</p>
+              <p className="text-[10px] font-mono text-indigo-400 truncate max-w-[180px] sm:max-w-none">{userEmail}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -179,143 +177,37 @@ export default function VeloLedgerMain() {
           </div>
         </div>
 
-        {/* Tab Toggle Navigation */}
-        <div className="grid grid-cols-3 gap-1 bg-[#101726] p-1.5 rounded-2xl border border-slate-800 text-xs font-bold font-mono">
-          <button 
-            onClick={() => setActiveTab('dashboard')}
-            className={`py-2.5 rounded-xl transition-all cursor-pointer ${
-              activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            📊 Dashboard
-          </button>
-          <button 
-            onClick={() => setActiveTab('vault')}
-            className={`py-2.5 rounded-xl transition-all cursor-pointer ${
-              activeTab === 'vault' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            🔒 Vault Assets ({invoices.filter(i => i.isLocked).length})
-          </button>
-          <button 
-            onClick={() => setActiveTab('invoices')}
-            className={`py-2.5 rounded-xl transition-all cursor-pointer ${
-              activeTab === 'invoices' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            🧾 Invoices ({invoices.length})
-          </button>
+        {/* Financial Metrics */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="bg-[#101726] border border-slate-800 rounded-2xl p-4 shadow-lg">
+            <p className="text-[10px] font-mono uppercase text-slate-400">Total Secured Volume</p>
+            <p className="text-xl sm:text-2xl font-black text-white mt-1">${totalSecured.toLocaleString()}.00</p>
+          </div>
+          <div className="bg-[#101726] border border-slate-800 rounded-2xl p-4 shadow-lg">
+            <p className="text-[10px] font-mono uppercase text-amber-400">Escrow Locked Funds</p>
+            <p className="text-xl sm:text-2xl font-black text-amber-400 mt-1">${totalLocked.toLocaleString()}.00</p>
+          </div>
         </div>
 
-        {/* TAB 1: DASHBOARD VIEW */}
-        {activeTab === 'dashboard' && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-[#101726] border border-slate-800 rounded-2xl p-4 shadow-lg">
-                <p className="text-[10px] font-mono uppercase text-slate-400">Total Volume</p>
-                <p className="text-lg sm:text-xl font-black text-white mt-1">${totalSecured.toLocaleString()}</p>
-              </div>
-              <div className="bg-[#101726] border border-slate-800 rounded-2xl p-4 shadow-lg">
-                <p className="text-[10px] font-mono uppercase text-amber-400">Escrow Locked</p>
-                <p className="text-lg sm:text-xl font-black text-amber-400 mt-1">${totalLocked.toLocaleString()}</p>
-              </div>
-              <div className="bg-[#101726] border border-slate-800 rounded-2xl p-4 shadow-lg">
-                <p className="text-[10px] font-mono uppercase text-emerald-400">Settled</p>
-                <p className="text-lg sm:text-xl font-black text-emerald-400 mt-1">${totalSettled.toLocaleString()}</p>
-              </div>
+        {/* Invoice Feed */}
+        <div className="space-y-3">
+          <h2 className="text-xs font-bold font-mono text-slate-400 uppercase tracking-wider">Active Deliverable Vaults</h2>
+          
+          {invoices.length === 0 ? (
+            <div className="bg-[#101726] border border-slate-800 rounded-2xl p-8 text-center text-slate-500 text-xs font-mono">
+              No locked deliverables found. Tap "+ New Asset" to create your first escrow milestone.
             </div>
+          ) : (
+            invoices.map((inv) => {
+              const originUrl = typeof window !== 'undefined' ? window.location.origin : '';
+              const portalUrl = `${originUrl}/pay/${inv.id}`;
 
-            <div className="bg-[#101726] border border-slate-800 rounded-2xl p-5 space-y-3">
-              <h3 className="text-xs font-bold font-mono text-slate-400 uppercase">Recent Activity</h3>
-              {invoices.length === 0 ? (
-                <p className="text-xs text-slate-500 font-mono">No transaction records found.</p>
-              ) : (
-                invoices.slice(0, 3).map(inv => (
-                  <div key={inv.id} className="flex justify-between items-center bg-[#070a12] p-3 rounded-xl border border-slate-800/80 text-xs">
-                    <div>
-                      <p className="font-bold text-white">{inv.title}</p>
-                      <p className="text-[10px] text-slate-400">{inv.client} • {inv.id}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-mono font-bold text-white">${inv.amount}</p>
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${inv.isLocked ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                        {inv.status}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
+              // Simple, natural WhatsApp message
+              const waSimpleText = `Hi ${inv.client}, here is your payment invoice link: ${portalUrl}`;
+              const waMessage = encodeURIComponent(waSimpleText);
+              const waLink = inv.phone ? `https://wa.me/${inv.phone.replace(/[^0-9]/g, '')}?text=${waMessage}` : `https://wa.me/?text=${waMessage}`;
 
-        {/* TAB 2: VAULT VIEW (Only Locked Assets) */}
-        {activeTab === 'vault' && (
-          <div className="space-y-3">
-            <h2 className="text-xs font-bold font-mono text-slate-400 uppercase tracking-wider">Active Escrow Sealed Assets</h2>
-            {invoices.filter(i => i.isLocked).length === 0 ? (
-              <div className="bg-[#101726] border border-slate-800 rounded-2xl p-8 text-center text-slate-500 text-xs font-mono">
-                No currently locked assets in vault.
-              </div>
-            ) : (
-              invoices.filter(i => i.isLocked).map(inv => {
-                const originUrl = typeof window !== 'undefined' ? window.location.origin : '';
-                const portalUrl = `${originUrl}/pay/${inv.id}`;
-                const waMessage = encodeURIComponent(
-                  `Hi ${inv.client}, your deliverable (${inv.title}) has been locked in VeloLedger Escrow. Complete settlement here to instantly access files & receipt: ${portalUrl}`
-                );
-                const waLink = inv.phone ? `https://wa.me/${inv.phone.replace(/[^0-9]/g, '')}?text=${waMessage}` : `https://wa.me/?text=${waMessage}`;
-
-                return (
-                  <div key={inv.id} className="bg-[#101726] border border-slate-800 rounded-2xl p-4 space-y-3 shadow-xl">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold font-mono text-indigo-400">{inv.id}</span>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                            LOCKED
-                          </span>
-                        </div>
-                        <h3 className="text-sm font-bold text-white mt-1">{inv.title}</h3>
-                        <p className="text-xs text-slate-400">{inv.client} {inv.phone && `(${inv.phone})`}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-base font-black text-white">${inv.amount.toLocaleString()}.00</p>
-                        <p className="text-[10px] font-mono text-slate-500">{inv.date}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-2 pt-2 border-t border-slate-800/80 text-xs font-bold">
-                      <a href={`/pay/${inv.id}`} target="_blank" className="py-2 bg-slate-800 text-slate-200 text-center rounded-xl border border-slate-700 flex items-center justify-center gap-1">
-                        <span>🔗</span> Link
-                      </a>
-                      <a href={waLink} target="_blank" rel="noopener noreferrer" className="py-2 bg-emerald-600/20 text-emerald-400 text-center rounded-xl border border-emerald-500/30 flex items-center justify-center gap-1">
-                        <span>💬</span> Chase
-                      </a>
-                      <button onClick={() => toggleInvoiceStatus(inv.id, inv.status)} className="py-2 bg-indigo-600/20 text-indigo-300 text-center rounded-xl border border-indigo-500/30 cursor-pointer">
-                        🔓 Unlock
-                      </button>
-                      <button onClick={() => handleDeleteInvoice(inv.id)} className="py-2 bg-rose-500/10 text-rose-400 text-center rounded-xl border border-rose-500/20 cursor-pointer">
-                        🗑️ Delete
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
-
-        {/* TAB 3: INVOICES VIEW (All Records & Tax Receipts) */}
-        {activeTab === 'invoices' && (
-          <div className="space-y-3">
-            <h2 className="text-xs font-bold font-mono text-slate-400 uppercase tracking-wider">Full Invoicing History</h2>
-            {invoices.length === 0 ? (
-              <div className="bg-[#101726] border border-slate-800 rounded-2xl p-8 text-center text-slate-500 text-xs font-mono">
-                No invoices found in database.
-              </div>
-            ) : (
-              invoices.map(inv => (
+              return (
                 <div key={inv.id} className="bg-[#101726] border border-slate-800 rounded-2xl p-4 space-y-3 shadow-xl">
                   <div className="flex justify-between items-start">
                     <div>
@@ -328,7 +220,7 @@ export default function VeloLedgerMain() {
                         </span>
                       </div>
                       <h3 className="text-sm font-bold text-white mt-1">{inv.title}</h3>
-                      <p className="text-xs text-slate-400">{inv.client}</p>
+                      <p className="text-xs text-slate-400">{inv.client} {inv.phone && `(${inv.phone})`}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-base font-black text-white">${inv.amount.toLocaleString()}.00</p>
@@ -336,21 +228,46 @@ export default function VeloLedgerMain() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80 text-xs font-bold">
-                    <a href={`/pay/${inv.id}`} target="_blank" className="flex-1 py-2 bg-slate-800 text-slate-200 text-center rounded-xl border border-slate-700 flex items-center justify-center gap-1">
-                      📄 View {inv.isLocked ? 'Notice' : 'Tax Invoice'}
+                  {/* Actions Bar */}
+                  <div className="grid grid-cols-4 gap-2 pt-2 border-t border-slate-800/80 text-xs font-bold">
+                    <a 
+                      href={`/pay/${inv.id}`}
+                      target="_blank"
+                      className="py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-center rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-1"
+                    >
+                      <span>🔗</span> Link
                     </a>
-                    <button onClick={() => handleDeleteInvoice(inv.id)} className="px-4 py-2 bg-rose-500/10 text-rose-400 text-center rounded-xl border border-rose-500/20 cursor-pointer">
-                      🗑️
+
+                    <a 
+                      href={waLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-center rounded-xl border border-emerald-500/30 transition-all flex items-center justify-center gap-1"
+                    >
+                      <span>💬</span> Chase
+                    </a>
+
+                    <button 
+                      onClick={() => toggleInvoiceStatus(inv.id, inv.status)}
+                      className="py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-center rounded-xl border border-indigo-500/30 transition-all cursor-pointer"
+                    >
+                      {inv.isLocked ? '🔓 Unlock' : '🔒 Lock'}
+                    </button>
+
+                    <button 
+                      onClick={() => handleDeleteInvoice(inv.id)}
+                      className="py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-center rounded-xl border border-rose-500/20 transition-all cursor-pointer"
+                    >
+                      🗑️ Delete
                     </button>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        )}
+              );
+            })
+          )}
+        </div>
 
-        {/* Modal: Create Escrow Asset */}
+        {/* Modal: Create Deliverable Asset */}
         {showModal && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-[#101726] border border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 max-h-[90vh] overflow-y-auto">
